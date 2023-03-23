@@ -1,3 +1,4 @@
+/* Code by AkinoAlice@Tyrant_Rex */
 .center_div {
     text-align: center;;
     margin: auto;
@@ -9,15 +10,86 @@
     text-align:center
 }
 
-h1 {
-    color: #850085;
-}
-
 .bg_color_aqua {
     background-color: aqua;
+}
+
+.nav_text {
+    font-size: large;
+    color: #474747;
+}
+
+.nav_td {
+    border-top-right-radius: 15px;
+    border-bottom-left-radius: 15px;
+    text-align:  center;
+    padding-left: 10px;
+    padding-right: 10px;
+    background-color: darkgray;
+}
+
+.gradient {
+    background: rgb(122,122,122);
+    background: linear-gradient(306deg, rgba(122,122,122,1) 0%, rgba(0,162,195,1) 100%);
+}
+
+.tt_td {
+    text-align:  center;
+    padding-left: 7px;
+    padding-right: 7px;
+    background-color: darkgray;
+}
+
+.tt_td_lesson {
+    text-align:  center;
+    border: 1px solid;
+    padding-left: 7px;
+    padding-right: 7px;
+    background-color: darkgray;
+}
+
+.tt_td_time {
+    text-align:  center;
+    padding-left: 7px;
+    padding-right: 7px;
+    background-color: rgb(87, 87, 87);
+    color: azure;
+}
+
+.tt_td_week {
+    text-align:  center;
+    padding-left: 7px;
+    padding-right: 7px;
+    background-color: rgb(87, 87, 87);
+    color: rgb(53, 3, 97);
+}
+
+.hobbit_fig {
+    float: left;
+    margin: 10px;
+}
+
+table {
+    border: 0px solid black;
+    margin: 1em auto;
+    border-spacing: 5px;
+    text-align: center;
 }
 
 img {
     width: auto;
     height: auto;
+}
+
+h1 {
+    color: #850085;
+}
+
+
+div {
+    position: absolute;
+    margin-top: 0px;
+    margin-left: 0px;
+    height: auto;
+    width: 100%;
 }
