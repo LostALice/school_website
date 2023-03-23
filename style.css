@@ -69,6 +69,16 @@
     margin: 10px;
 }
 
+.img_logo {
+    height: 200px;
+    width: 200px;
+}
+
+.img_logo_frame {
+    padding-left: 70px;
+    padding-right: 70px;
+}
+
 table {
     border: 0px solid black;
     margin: 1em auto;
