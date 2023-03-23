@@ -1,0 +1,23 @@
+.center_div {
+    text-align: center;;
+    margin: auto;
+    border: 0cap;
+    padding: 0px;
+}
+
+.center_all {
+    text-align:center
+}
+
+h1 {
+    color: #850085;
+}
+
+.bg_color_aqua {
+    background-color: aqua;
+}
+
+img {
+    width: auto;
+    height: auto;
+}
