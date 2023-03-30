@@ -8,11 +8,11 @@
 </head>
 <body>
     <?php
-        $id = $_POST["id"];
-        $pw = $_POST["pw"];
+        $num1 = $_POST["num1"];
+        $num2 = $_POST["num2"];
+        $num3 = $_POST["num3"];
     ?>
 
-    <h2><?php echo $id; ?></h2>
-    <h2><?php echo $pw; ?></h2>
+    <h2><?php echo $num1; ?></h2>
 </body>
 </html>
