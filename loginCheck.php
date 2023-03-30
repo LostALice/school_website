@@ -11,8 +11,10 @@
         $num1 = $_POST["num1"];
         $num2 = $_POST["num2"];
         $num3 = $_POST["num3"];
+
+        $sum = $num1 + $num2 + $num3;
     ?>
 
-    <h2><?php echo $num1; ?></h2>
+    <h2><?php echo $sum; ?></h2>
 </body>
 </html>
