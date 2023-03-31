@@ -26,6 +26,6 @@
         }
         ?>
 
-    <?php tooltip();?>
+    <?php tooltip($_POST["tooltip1"], $_POST["tooltip2"], $_POST["tooltip3"]);?>
 </body>
 </html>
