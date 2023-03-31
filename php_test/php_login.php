@@ -24,7 +24,8 @@
             echo "<br><br><strong>range:</strong>" . $range;
 
         }
-	?>
+        ?>
 
+    <?php tooltip();?>
 </body>
 </html>
