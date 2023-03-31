@@ -51,15 +51,15 @@
             <div class="mb-3">
                 <div class="mb-3">
                     <label for="formGroupExampleInput" class="form-label">Example label</label>
-                    <input type="text" class="form-control" id="formGroupExampleInput" placeholder="Example input placeholder" name="tooltips1">
+                    <input type="text" class="form-control" id="formGroupExampleInput" placeholder="Example input placeholder" name="tooltip1">
                 </div>
                 <div class="mb-3">
                     <label for="formGroupExampleInput2" class="form-label">Another label</label>
-                    <input type="text" class="form-control" id="formGroupExampleInput2" placeholder="Another input placeholder" name="tooltips2">
+                    <input type="text" class="form-control" id="formGroupExampleInput2" placeholder="Another input placeholder" name="tooltip2">
                 </div>
                 <div class="mb-3">
                     <label for="formGroupExampleInput2" class="form-label">Another2 label</label>
-                    <input type="text" class="form-control" id="formGroupExampleInput2" placeholder="Another input placeholder" name="tooltips3">
+                    <input type="text" class="form-control" id="formGroupExampleInput2" placeholder="Another input placeholder" name="tooltip3">
                 </div>
             </div>
 
