@@ -9,13 +9,15 @@
 <body>
     <?php
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
-            $email = $_POST["exampleInputEmail1"];
-            $pw = $_POST["exampleInputPassword1"];
+            $email = $_POST["email"];
+            $pw = $_POST["pw"];
+            $select = $_POST["select"];
+            $range = $_POST["range"];
 
-
-
-            echo "<br><br><strong>email:</strong> " . $email;
-            echo "<br><br><strong>pw:</strong> " . $pw;
+            echo "<br><br><strong>email:</strong> " $email;
+            echo "<br><br><strong>pw:</strong> " $pw;
+            echo "<br><br><strong>select:</strong> " $select;
+            echo "<br><br><strong>range:</strong> " $range;
         }
 	?>
 </body>

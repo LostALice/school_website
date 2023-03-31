@@ -47,17 +47,19 @@
         </div>
     </nav>
 
-    <div class="bd-example-snippet bd-code-snippet">
+    <div class="mb-3 form-check">
         <form action="php_login.php" method="POST">
             <div class="mb-3">
                 <label for="exampleInputEmail1" class="form-label">Email address</label>
-                <input type="text" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
-                <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
+                <input type="text" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" name="email">
+                <div id="emailHelp" class="form-text">
+                    We'll never share your email with anyone else.
+                </div>
             </div>
 
             <div class="mb-3">
                 <label for="exampleInputPassword1" class="form-label">Password</label>
-                <input type="password" class="form-control" id="exampleInputPassword1">
+                <input type="password" class="form-control" id="exampleInputPassword1" name="pw">
             </div>
 
             <div class="mb-3 form-check">
@@ -65,7 +67,23 @@
                 <label class="form-check-label" for="exampleCheck1">Check me out</label>
             </div>
 
-                <button type="submit" class="btn btn-primary">Submit</button>
+            <div class="mb-3">
+                <select class="form-select" aria-label="Default select example" name="select">
+                    <option selected>Open this select menu</option>
+                    <option value="1">One</option>
+                    <option value="2">Two</option>
+                    <option value="3">Three</option>
+                </select>
+
+            </div>
+            <div class="mb-3">
+                <label for="customRange1" class="form-label">Example range</label>
+                <input type="range" class="form-range" id="customRange1" name="range">
+            </div>
+
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+
           </form>
     </div>
 
