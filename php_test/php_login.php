@@ -7,6 +7,7 @@
     <title>Document</title>
 </head>
 <body>
+    <?php navbar();?>
     <?php
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $email = $_POST["email"];
