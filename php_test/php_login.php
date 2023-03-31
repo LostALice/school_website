@@ -16,7 +16,6 @@
 
             echo "<br><br><strong>email:</strong> " . $email;
             echo "<br><br><strong>pw:</strong> " . $pw;
-            echo "<br><br><strong>pw:</strong> " . $result;
         }
 	?>
 </body>
