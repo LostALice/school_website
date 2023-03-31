@@ -55,7 +55,7 @@
                 </h2>
                 <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionExample">
                 <div class="accordion-body">
-                    <strong>$tooltip1</strong></div>
+                    <strong> <?php echo $tooltip1 ?></strong>
                 </div>
             </div>
             <div class="accordion-item">
@@ -66,7 +66,7 @@
                 </h2>
                 <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
                 <div class="accordion-body">
-                    <strong>$tooltip2</strong></div>
+                    <strong> <?php echo $tooltip2 ?></strong>
                 </div>
             </div>
             <div class="accordion-item">
@@ -77,7 +77,7 @@
                 </h2>
                 <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
                 <div class="accordion-body">
-                    <strong>$tooltip3</strong>
+                    <strong> <?php echo $tooltip3 ?></strong>
                 </div>
                 </div>
             </div>
