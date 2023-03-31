@@ -14,10 +14,10 @@
             $select = $_POST["select"];
             $range = $_POST["range"];
 
-            echo "<br><br><strong>email:</strong> " $email;
-            echo "<br><br><strong>pw:</strong> " $pw;
-            echo "<br><br><strong>select:</strong> " $select;
-            echo "<br><br><strong>range:</strong> " $range;
+            echo "<br><br><strong>email:</strong>" . $email;
+            echo "<br><br><strong>pw:</strong>"    . $pw;
+            echo "<br><br><strong>select:</strong>". $select;
+            echo "<br><br><strong>range:</strong>" . $range;
         }
 	?>
 </body>
