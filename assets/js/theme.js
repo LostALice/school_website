@@ -59,7 +59,7 @@
   var scrollToTop = document.querySelector('.scroll-to-top');
   
   if (scrollToTop) {
-    
+
     // Scroll to top button appear
     window.addEventListener('scroll', function() {
       var scrollDistance = window.pageYOffset;

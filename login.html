@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="assets/fonts/fontawesome5-overrides.min.css">
     <link rel="stylesheet" href="assets/css/costum.css">
     <link rel="stylesheet" href="assets/css/Login-Form-Dark.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -22,13 +23,10 @@
         <form method="post" style="background: rgba(15,25,35,0.9);">
             <h2 class="visually-hidden">Login Form</h2>
             <div class="illustration"><i class="icon ion-ios-locked-outline"></i></div>
-            <div class="mb-3"><input class="form-control" type="email" name="email" placeholder="NID" style="border-bottom-color: rgb(112,128,146);"></div>
-            <div class="mb-3"><input class="form-control" type="password" name="password" placeholder="Password"></div>
-            <div class="mb-3"><button class="btn btn-primary d-block w-100" type="submit">Log In</button></div>
+            <div class="mb-3"><input id="nid" class="form-control" type="text" name="email" placeholder="NID" style="border-bottom-color: rgb(112,128,146);"></div>
+            <div class="mb-3"><input id="login_password" class="form-control" type="password" name="password" placeholder="Password"></div>
+            <div class="mb-3"><button id="login_btn" class="btn btn-primary d-block w-100" type="submit">Log In</button></div>
         </form>
     </section>
-    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
-    <script src="assets/js/theme.js"></script>
 </body>
-
 </html>
