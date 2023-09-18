@@ -1,5 +1,5 @@
 # 畢業專題系統
-
+[![wakatime](https://wakatime.com/badge/user/09ce4786-a8a5-43eb-8a65-50ad8684b5da/project/2f818c62-a844-4b03-9072-4e4658b25ced.svg)](https://wakatime.com/badge/user/09ce4786-a8a5-43eb-8a65-50ad8684b5da/project/2f818c62-a844-4b03-9072-4e4658b25ced)
 ![Untitled](./readme/Untitled.png)
 
 danger #e74a3b
