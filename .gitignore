@@ -2,3 +2,5 @@
 /backup/
 /readme/
 .hintrc
+
+*.ipynb
