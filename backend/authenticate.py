@@ -137,7 +137,7 @@ class AUTHENTICATION(SQLHandler):
             "Drop",
         ]
 
-    def SQLInjectionCheck(self, nid: str=None, JWT: str=None, prompt: str="") -> bool:
+    def SQLInjectionCheck(self, nid: str="", JWT: str="", prompt: str="") -> bool:
         """Check if the given nid and JWT contain SQL injection keywords
 
         Args:
@@ -164,7 +164,7 @@ class AUTHENTICATION(SQLHandler):
 
     # return a hashed and salted password
     # method: "hashed password" + "nid" => hash function = new hashed password
-    def authenticate(self, nid: str, hashed_password: str) -> set:
+    def authenticate(self, nid: str, hashed_password: str) -> [bool, str]:
         self.sql_init()
         sha256 = hashlib.sha256()
         string = hashed_password + nid
@@ -223,8 +223,6 @@ class AUTHENTICATION(SQLHandler):
             return True
         else:
             return False
-
-    # def
 
 # development only
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
-#Code by AkinoAlice@Tyrant_Rex
+# Code by AkinoAlice@Tyrant_Rex
 
 import mysql.connector as connector
+
 
 class SQLHandler:
     def __init__(self):
@@ -26,7 +27,8 @@ class SQLHandler:
 
         self.JWT_TOKEN_EXPIRE_TIME = 3600  # Token valid for 1 Hour
         self.JWT_SECRET = "My wife is kurumi"   # Encryption and decryption key
-        self.JWT_ALGORITHM = "HS256"  # encryption and decryption algorithm e.g.
+        # encryption and decryption algorithm e.g.
+        self.JWT_ALGORITHM = "HS256"
 
         # self.JWT_TOKEN_EXPIRE_TIME = os.getenv("JWT_TOKEN_EXPIRE_TIME")
         # self.JWT_SECRET = os.getenv("JWT_SECRET")
@@ -50,7 +52,7 @@ class SQLHandler:
 
     # subject
     @sql_term
-    def getSubjectData(self, nid: str="") -> dict:
+    def getSubjectData(self, nid: str = "") -> dict:
         self.cursor.execute("""
             SELECT
                 subject.SUBJECT_ID,
@@ -88,14 +90,14 @@ class SQLHandler:
             VALUES (
                 %s, %s, %s, %s, %s, %s, %s
             );""", (
-                params["subjectUUID"],
-                params["subjectName"],
-                params["year"],
-                params["startDate"],
-                params["endDate"],
-                params["settlementStartDate"],
-                params["settlementEndDate"]
-            )
+            params["subjectUUID"],
+            params["subjectName"],
+            params["year"],
+            params["startDate"],
+            params["endDate"],
+            params["settlementStartDate"],
+            params["settlementEndDate"]
+        )
         )
 
         # bind subject and creator
@@ -107,9 +109,9 @@ class SQLHandler:
             VALUES (
                 %s, %s
             );""", (
-                params["projectUUID"],
-                params["nid"],
-            )
+            params["projectUUID"],
+            params["nid"],
+        )
         )
 
         # bind subject and project
@@ -121,15 +123,15 @@ class SQLHandler:
             VALUES (
                 %s, %s
             );""", (
-                params["subjectUUID"],
-                params["projectUUID"]
-            )
+            params["subjectUUID"],
+            params["projectUUID"]
+        )
         )
         self.conn.commit()
         return True
 
     @sql_term
-    def deleteSubjectData(self, subjectUUID: str="") -> bool:
+    def deleteSubjectData(self, subjectUUID: str = "") -> bool:
         self.cursor.execute("""
             UPDATE subject
             SET subject.ENABLE = 0
@@ -140,7 +142,7 @@ class SQLHandler:
 
     # project
     @sql_term
-    def getProjectData(self, projectData: str="") -> dict:
+    def getProjectData(self, projectData: str = "") -> dict:
         data = {
             "name": [],
             "announcements": [],
@@ -160,8 +162,8 @@ class SQLHandler:
                 member on project.PROJECT_ID = member.PROJECT_ID
             WHERE
 	            project.SUBJECT_ID = %s AND member.NID = %s AND project.ENABLE = 1; """,
-            (projectData["subjectUUID"], projectData["NID"])
-        )
+                            (projectData["subjectUUID"], projectData["NID"])
+                            )
         projectList = self.cursor.fetchall()
         data["projectID"] = projectList
 
@@ -175,8 +177,8 @@ class SQLHandler:
                     member on project.PROJECT_ID = member.PROJECT_ID
                 WHERE
                     project.PROJECT_ID = %s AND member.NID = %s AND project.ENABLE = 1""",
-                (i[0], projectData["NID"])
-            )
+                                (i[0], projectData["NID"])
+                                )
             data["name"].append(self.cursor.fetchall()[0])
 
             # announcements
@@ -190,8 +192,8 @@ class SQLHandler:
                     announcements on project.PROJECT_ID = announcements.PROJECT_ID
                 WHERE
                     project.PROJECT_ID = %s AND member.NID = %s AND announcements.ENABLE = 1""",
-                    (i[0], projectData["NID"])
-            )
+                                (i[0], projectData["NID"])
+                                )
             data["announcements"].append(self.cursor.fetchall()[0])
 
             # student
@@ -205,8 +207,8 @@ class SQLHandler:
                     student on project.PROJECT_ID = student.PROJECT_ID
                 WHERE
                     project.PROJECT_ID = %s AND member.NID = %s AND student.ENABLE = 1""",
-                    (i[0], projectData["NID"])
-            )
+                                (i[0], projectData["NID"])
+                                )
             data["student"].append(self.cursor.fetchall()[0])
 
             # teacher
@@ -220,44 +222,48 @@ class SQLHandler:
                     teacher on project.PROJECT_ID = teacher.PROJECT_ID
                 WHERE
                     project.PROJECT_ID = %s AND member.NID = %s AND teacher.ENABLE = 1""",
-                    (i[0], projectData["NID"])
-            )
+                                (i[0], projectData["NID"])
+                                )
             data["teacher"].append(self.cursor.fetchall()[0])
 
             # group
             self.cursor.execute("""
-                SELECT count(`group`.GID) as `group`
+                SELECT
+                    COUNT(gp.GID) AS gp
                 FROM
+                    `group` AS gp
+                LEFT JOIN
                     project
-                INNER JOIN
-                    member on project.PROJECT_ID = member.PROJECT_ID
-                INNER JOIN
-                    `group` on project.PROJECT_ID = `group`.PROJECT_ID
-                WHERE
-                    project.PROJECT_ID = %s AND member.NID = %s AND `group`.ENABLE = 1""",
-                    (i[0], projectData["NID"])
-            )
+                    ON project.PROJECT_ID = gp.PROJECT_ID
+                Where
+                    gp.NID = %s
+                    AND project.PROJECT_ID = %s
+                    AND project.ENABLE = 1
+                    AND gp.ENABLE = 1;""",
+                                (projectData["NID"], i[0]))
             data["group"].append(self.cursor.fetchall()[0])
 
             # assignment
             self.cursor.execute("""
-                SELECT count(assignment.TASK_ID) as task
+                SELECT
+                    COUNT(assignment.TASK_ID) AS task
                 FROM
-                    project
-                INNER JOIN
-                    member on project.PROJECT_ID = member.PROJECT_ID
-                INNER JOIN
-                    assignment on project.PROJECT_ID = assignment.PROJECT_ID
-                WHERE
-                    project.PROJECT_ID = %s AND member.NID = %s AND assignment.ENABLE = 1""",
-                    (i[0], projectData["NID"])
-            )
+                    assignment
+                LEFT JOIN
+                    `group` AS gp
+                    ON gp.GID = assignment.GID
+                Where
+                    gp.NID = %s
+                    AND gp.PROJECT_ID = %s
+                    AND assignment.ENABLE = 1
+                    AND gp.ENABLE = 1;""",
+                                (projectData["NID"], i[0]))
             data["assignment"].append(self.cursor.fetchall()[0])
 
         return data
 
     @sql_term
-    def createProjectData(self, params: dict={}) -> bool:
+    def createProjectData(self, params: dict = {}) -> bool:
         # bind subject and project
         self.cursor.execute("""
             INSERT INTO project (
@@ -268,10 +274,10 @@ class SQLHandler:
             VALUES (
                 %s, %s, %s
             );""", (
-                params["subjectUUID"],
-                params["projectUUID"],
-                params["projectName"]
-            )
+            params["subjectUUID"],
+            params["projectUUID"],
+            params["projectName"]
+        )
         )
         self.conn.commit()
 
@@ -283,16 +289,16 @@ class SQLHandler:
             VALUES (
                 %s, %s
             );""", (
-                params["projectUUID"],
-                params["nid"]
-            )
+            params["projectUUID"],
+            params["nid"]
+        )
         )
         self.conn.commit()
 
         return True
 
     @sql_term
-    def deleteProjectData(self, projectUUID: str="") -> bool:
+    def deleteProjectData(self, projectUUID: str = "") -> bool:
         self.cursor.execute("""
             UPDATE project
             SET project.ENABLE = 0
@@ -302,7 +308,7 @@ class SQLHandler:
         return True
 
     @sql_term
-    def getProjectInfo(self, projectUUID: str="") -> dict:
+    def getProjectInfo(self, projectUUID: str = "") -> dict:
         self.cursor.execute("""
              SELECT
 	            subject.SUBJECT_ID, subject.NAME, subject.YEAR, subject.START_DATE, subject.END_DATE, subject.SETTLEMENT_START_DATE, subject.SETTLEMENT_END_DATE
@@ -318,7 +324,7 @@ class SQLHandler:
 
     # announcement
     @sql_term
-    def getAnnouncementData(self, projectUUID: str="") -> dict:
+    def getAnnouncementData(self, projectUUID: str = "") -> dict:
         self.cursor.execute("""
             SELECT
                 announcements.ANNOUNCEMENTS_ID, announcements.AUTHOR, announcements.TITLE, announcements.LAST_EDIT
@@ -327,15 +333,15 @@ class SQLHandler:
             JOIN
                 member ON member.PROJECT_ID = announcements.PROJECT_ID
             WHERE
-                member.PROJECT_ID = %s AND announcements.ENABLE = 1""",(
-                    projectUUID,
-                ))
+                member.PROJECT_ID = %s AND announcements.ENABLE = 1""", (
+            projectUUID,
+        ))
 
         announcementData = self.cursor.fetchall()
         return announcementData
 
     @sql_term
-    def createAnnouncement(self, params: dict={}) -> bool:
+    def createAnnouncement(self, params: dict = {}) -> bool:
         a = self.cursor.execute("""
             INSERT INTO announcements (
                 announcements.PROJECT_ID,
@@ -348,20 +354,33 @@ class SQLHandler:
             VALUES (
                 %s, %s, %s, %s, %s, %s
             )""", (
-                params["PROJECT_ID"],
-                params["ANNOUNCEMENTS_ID"],
-                params["AUTHOR"],
-                params["TITLE"],
-                params["ANNOUNCEMENTS"],
-                params["LAST_EDIT"]
-            ))
+            params["PROJECT_ID"],
+            params["ANNOUNCEMENTS_ID"],
+            params["AUTHOR"],
+            params["TITLE"],
+            params["ANNOUNCEMENTS"],
+            params["LAST_EDIT"]
+        ))
 
         self.conn.commit()
         return True
 
     @sql_term
-    def getAnnouncementInfo(self, announcementUUID: str="") -> dict:
-        print(announcementUUID)
+    def deleteAnnouncement(self, params: dict) -> bool:
+        self.cursor.execute("""
+            UPDATE
+                announcements
+            SET
+                announcements.ENABLE = 0
+            WHERE
+                announcements.PROJECT_ID = %s
+                AND announcements.ANNOUNCEMENTS_ID = %s""",
+                            (params["projectUUID"], params["announcementUUID"]))
+        self.conn.commit()
+        return True
+
+    @sql_term
+    def getAnnouncementInfo(self, announcementUUID: str = "") -> dict:
         self.cursor.execute("""
             SELECT
                 announcements.AUTHOR, announcements.TITLE,announcements. ANNOUNCEMENTS, announcements.LAST_EDIT
@@ -369,14 +388,14 @@ class SQLHandler:
                 announcements
             WHERE
                 announcements.ENABLE = 1 AND announcements.ANNOUNCEMENTS_ID = %s;""",
-            (announcementUUID,))
+                            (announcementUUID,))
 
         info = self.cursor.fetchone()
         return info
 
     # student
     @sql_term
-    def getStudentData(self, projectUUID: str="") -> dict:
+    def getStudentData(self, projectUUID: str = "") -> dict:
         self.cursor.execute("""
             SELECT
                 student.NID, login.USERNAME
@@ -386,10 +405,9 @@ class SQLHandler:
                 login ON student.NID = login.NID
             WHERE
                 student.PROJECT_ID = %s AND student.ENABLE = 1""",
-                (projectUUID,))
+                            (projectUUID,))
 
         studentData = self.cursor.fetchall()
-        print(studentData)
         return studentData
 
     @sql_term
@@ -408,30 +426,29 @@ class SQLHandler:
         return studentList
 
     @sql_term
-    def newStudent(self, params: dict={}) -> bool:
-        print(params)
+    def newStudent(self, params: dict = {}) -> bool:
         self.cursor.execute("""
             INSERT INTO student
                 (student.PROJECT_ID, student.NID)
             VALUES
-                (%s, %s)""",(params["projectUUID"], params["nid"]))
+                (%s, %s)""", (params["projectUUID"], params["nid"]))
         self.conn.commit()
         return True
 
     @sql_term
-    def deleteStudent(self, params: dict={}) -> bool:
+    def deleteStudent(self, params: dict = {}) -> bool:
         self.cursor.execute("""
             DELETE
             FROM
                 student
             WHERE
                 student.NID = %s AND student.PROJECT_ID = %s;""",
-                (params["nid"], params["projectUUID"]))
+                            (params["nid"], params["projectUUID"]))
         self.conn.commit()
         return True
 
     @sql_term
-    def getStudentInfo(self, nid: str="") -> dict:
+    def getStudentInfo(self, nid: str = "") -> dict:
         self.cursor.execute("""
             SELECT
                 login.USERNAME, login.PERMISSION
@@ -443,12 +460,12 @@ class SQLHandler:
         return info
 
     @sql_term
-    def importStudent(self, projectUUID: str="") -> bool:
+    def importStudent(self, projectUUID: str = "") -> bool:
         ...
 
     # teacher
     @sql_term
-    def getTeacherData(self, projectUUID: str="") -> dict:
+    def getTeacherData(self, projectUUID: str = "") -> dict:
         self.cursor.execute("""
             SELECT
                 teacher.NID, login.USERNAME
@@ -458,7 +475,7 @@ class SQLHandler:
                 login ON teacher.NID = login.NID
             WHERE
                 teacher.PROJECT_ID = %s AND teacher.ENABLE = 1""",
-                (projectUUID,))
+                            (projectUUID,))
 
         teacherData = self.cursor.fetchall()
         return teacherData
@@ -479,30 +496,29 @@ class SQLHandler:
         return teacherList
 
     @sql_term
-    def newTeacher(self, params: dict={}) -> bool:
-        print(params)
+    def newTeacher(self, params: dict = {}) -> bool:
         self.cursor.execute("""
             INSERT INTO teacher
                 (teacher.PROJECT_ID, teacher.NID)
             VALUES
-                (%s, %s)""",(params["projectUUID"], params["nid"]))
+                (%s, %s)""", (params["projectUUID"], params["nid"]))
         self.conn.commit()
         return True
 
     @sql_term
-    def deleteTeacher(self, params: dict={}) -> bool:
+    def deleteTeacher(self, params: dict = {}) -> bool:
         self.cursor.execute("""
             DELETE
             FROM
                 teacher
             WHERE
                 teacher.NID = %s AND teacher.PROJECT_ID = %s;""",
-                (params["nid"], params["projectUUID"]))
+                            (params["nid"], params["projectUUID"]))
         self.conn.commit()
         return True
 
     @sql_term
-    def getTeacherInfo(self, nid: str="") -> dict:
+    def getTeacherInfo(self, nid: str = "") -> dict:
         self.cursor.execute("""
             SELECT
                 login.USERNAME, login.PERMISSION
@@ -514,7 +530,7 @@ class SQLHandler:
         return info
 
     @sql_term
-    def importTeacher(self, projectUUID: str="") -> bool:
+    def importTeacher(self, projectUUID: str = "") -> bool:
         ...
 
     # group
@@ -526,9 +542,10 @@ class SQLHandler:
             FROM
                 `group` as gp
             WHERE
-                gp.PROJECT_ID = %s AND gp.ENABLE = 1
-            GROUP BY
-                gp.GID;""", (projectUUID,))
+                gp.PROJECT_ID = %s
+                AND gp.NID = "D1177531"
+                AND gp.ENABLE = 1;""",
+                            (projectUUID,))
         group_id = self.cursor.fetchall()
         groupData = []
         for i in group_id:
@@ -542,8 +559,8 @@ class SQLHandler:
                 `group` as gp
             WHERE
                 gp.GID = %s AND gp.ENABLE = 1 AND gp.NID LIKE "T%" """,
-                (i[0],))
-            data["teacher"] = self.cursor.fetchone()[0]
+                                (i[0],))
+            data["teacher"] = self.cursor.fetchall()[0][0]
 
             self.cursor.execute("""
             SELECT
@@ -552,8 +569,8 @@ class SQLHandler:
                 `group` as gp
             WHERE
                 gp.GID = %s AND gp.ENABLE = 1 AND gp.NID LIKE "D%" """,
-                (i[0],))
-            data["student"] = self.cursor.fetchone()[0]
+                                (i[0],))
+            data["student"] = self.cursor.fetchall()[0][0]
 
             self.cursor.execute("""
             SELECT
@@ -562,8 +579,8 @@ class SQLHandler:
                 `group` as gp
             WHERE
                 gp.GID = %s AND gp.ENABLE = 1 """,
-                (i[0],))
-            data["name"] = self.cursor.fetchone()[0]
+                                (i[0],))
+            data["name"] = self.cursor.fetchall()[0][0]
 
             groupData.append(data)
         return groupData
@@ -575,7 +592,7 @@ class SQLHandler:
                 `group` (PROJECT_ID, GID, NID, NAME)
             VALUES
                 (%s, %s, %s, %s)""",
-                (params["projectUUID"], params["GID"], params["nid"], params["name"]))
+                            (params["projectUUID"], params["GID"], params["nid"], params["name"]))
         self.conn.commit()
         return True
 
@@ -591,7 +608,7 @@ class SQLHandler:
             ON
                 login.NID = student.NID 
             WHERE
-                student.PROJECT_ID = %s AND student.ENABLE = 1 """,(projectUUID,))
+                student.PROJECT_ID = %s AND student.ENABLE = 1 """, (projectUUID,))
         student_list = self.cursor.fetchall()
         return student_list
 
@@ -607,7 +624,7 @@ class SQLHandler:
             ON
                 login.NID = teacher.NID
             WHERE
-                teacher.PROJECT_ID = %s AND teacher.ENABLE = 1 """,(projectUUID,))
+                teacher.PROJECT_ID = %s AND teacher.ENABLE = 1 """, (projectUUID,))
         teacher_list = self.cursor.fetchall()
         return teacher_list
 
@@ -634,7 +651,7 @@ class SQLHandler:
                 login.NID = gp.NID
             WHERE
                 gp.GID = %s AND gp.ENABLE = 1 AND login.NID LIKE "D%";""",
-                (groupUUID,))
+                            (groupUUID,))
         info["student"] = [i[0] for i in self.cursor.fetchall()]
 
         self.cursor.execute("""
@@ -648,7 +665,7 @@ class SQLHandler:
                 login.NID = gp.NID
             WHERE
                 gp.GID = %s AND gp.ENABLE = 1 AND login.NID LIKE "D%";""",
-                (groupUUID,))
+                            (groupUUID,))
         info["countStudent"] = self.cursor.fetchone()[0]
 
         self.cursor.execute("""
@@ -662,7 +679,7 @@ class SQLHandler:
                 login.NID = gp.NID
             WHERE
                 gp.GID = %s AND gp.ENABLE = 1 AND login.NID LIKE "T%";""",
-                (groupUUID,))
+                            (groupUUID,))
         info["teacher"] = [i[0] for i in self.cursor.fetchall()]
 
         self.cursor.execute("""
@@ -676,7 +693,7 @@ class SQLHandler:
                 login.NID = gp.NID
             WHERE
                 gp.GID = %s AND gp.ENABLE = 1 AND login.NID LIKE "T%";""",
-                (groupUUID,))
+                            (groupUUID,))
         info["countTeacher"] = self.cursor.fetchone()[0]
 
         return info
@@ -690,7 +707,247 @@ class SQLHandler:
                 gp.ENABLE = 0
             where
                 gp.GID = %s and gp.PROJECT_ID = %s""",
-            (params["groupUUID"], params["projectUUID"]))
+                            (params["groupUUID"], params["projectUUID"]))
+        self.conn.commit()
+        return True
+
+    @sql_term
+    def getAssignment(self, params: dict) -> bool:
+        self.cursor.execute("""
+            SELECT gp.gid
+            FROM
+                `group` AS gp
+            WHERE
+                gp.nid = %s
+                AND gp.project_id = %s
+                AND gp.enable = 1""",
+                            (params["nid"], params["projectUUID"]))
+        group_ids = self.cursor.fetchall()
+        group_ids = [i[0] for i in group_ids]
+
+        assignment_data = []
+        for group_id in group_ids:
+            self.cursor.execute("""
+                SELECT
+                    assignment.TASK_ID,
+                    gp.NAME,
+                    assignment.NAME,
+                    assignment.STATUS,
+                    assignment.SUBMISSION_DATE,
+                    assignment.UPLOADER
+                FROM
+                    assignment
+                join
+                    `group` as gp
+                ON
+                    assignment.GID = gp.GID
+                WHERE
+                    assignment.PROJECT_ID = %s
+                    AND assignment.GID = %s
+                    AND gp.NID = %s
+                    AND assignment.enable = 1""",
+                                (params["projectUUID"], group_id, params["nid"]))
+
+            fetch = self.cursor.fetchall()
+            if fetch != []:
+                for i in fetch:
+                    group_data = {}
+                    group_data["assignmentUUID"] = i[0]
+                    group_data["group"] = i[1]
+                    group_data["title"] = i[2]
+                    group_data["status"] = i[3]
+                    group_data["date"] = "None" if i[4] == "" else i[4]
+                    group_data["uploader"] = "Not " if i[5] == "" else str(
+                        i[5])
+                    assignment_data.append(group_data)
+
+            return assignment_data
+
+    @sql_term
+    def deleteAssignment(self, params: dict):
+        self.cursor.execute("""
+            UPDATE
+                assignment
+            SET
+                assignment.ENABLE = 0
+            WHERE
+                assignment.PROJECT_ID = %s
+                AND assignment.TASK_ID = %s """,
+                            (params["project_id"], params["task_id"]))
+        self.conn.commit()
+        return True
+
+    @sql_term
+    def getAssignmentInfo(self, params: dict) -> str:
+        self.cursor.execute("""
+            SELECT
+                assignment.NAME,
+                gp.NAME,
+                assignment.MARK,
+                assignment.WEIGHT,
+                assignment.SUBMISSION_DATE
+            FROM
+                assignment
+            JOIN
+                `group` AS gp
+            ON
+                gp.GID = assignment.GID
+            WHERE
+                assignment.TASK_ID = %s
+                AND assignment.PROJECT_ID = %s""",
+                            (params["task_id"], params["project_id"]))
+
+        info = self.cursor.fetchall()[0]
+        info = {
+            "assignment_name": info[0],
+            "group_name": info[1],
+            "mark": info[2],
+            "weight": info[3],
+            "date": info[4],
+        }
+
+        self.cursor.execute("""
+            SELECT
+                file.TASK_ID,
+                file.FILE_ID,
+                file.FILE_NAME,
+                file.AUTHOR,
+                file.DATE
+            FROM
+                file
+            WHERE
+                file.TASK_ID = %s
+                AND file.ENABLE = 1""",
+                            (params["task_id"],))
+
+        files = self.cursor.fetchall()
+
+        if files == []:
+            return info
+
+        assignment_file = []
+        for i in files:
+            assignment_file.append({
+                "taskID": i[0],
+                "fileID": i[1],
+                "filename": i[2],
+                "author": i[3],
+                "date": i[4],
+            })
+        info["assignment_file"] = assignment_file
+        return info
+
+    @sql_term
+    def downloadAssignment(self, params: dict) -> str:
+        self.cursor.execute("""
+            SELECT
+                file.FILE_NAME
+            FROM
+                file
+            WHERE
+                file.TASK_ID = %s
+                AND file.FILE_ID = %s""",
+                            (params["taskUUID"], params["fileI  D"]))
+        file_name = self.cursor.fetchone()[0]
+        return file_name
+
+    @sql_term
+    def markAssignmentScore(self, params: dict) -> bool:
+        self.cursor.execute("""
+            UPDATE
+                assignment
+            SET
+                assignment.MARK = %s
+            WHERE
+                assignment.TASK_ID = %s
+                AND assignment.PROJECT_ID = %s """,
+                            (params["marks"], params["taskUUID"], params["projectUUID"]))
+        self.conn.commit()
+
+        self.cursor.execute("""
+            UPDATE
+                assignment
+            SET
+                assignment.STATUS = "已評分"
+            WHERE
+                assignment.TASK_ID = %s
+                AND assignment.PROJECT_ID = %s """,
+                            (params["taskUUID"], params["projectUUID"]))
+        self.conn.commit()
+        return True
+
+    @sql_term
+    def deleteAssignmentItem(self, params: dict) -> bool:
+        self.cursor.execute("""
+            UPDATE
+                file
+            SET
+                file.ENABLE = 0
+            WHERE
+                file.TASK_ID = %s
+                AND file.FILE_ID = %s
+                AND file.AUTHOR = %s """,
+                (params["taskID"], params["fileID"], params["author"]))
+
+        self.conn.commit()
+        return True
+
+    @sql_term
+    def newAssignment(self, params: dict) -> bool:
+        self.cursor.execute("""
+            INSERT INTO
+                assignment
+                (
+                    assignment.TASK_ID,
+                    assignment.PROJECT_ID,
+                    assignment.NAME,
+                    assignment.STATUS,
+                    assignment.SUBMISSION_DATE,
+                    assignment.GID,
+                    assignment.UPLOADER,
+                    assignment.WEIGHT,
+                    assignment.MARK
+                )
+            VALUES
+                (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                            (
+                                params["task_id"],
+                                params["projectUUID"],
+                                params["name"],
+                                params["status"],
+                                params["submission_date"],
+                                params["gid"],
+                                params["uploader"],
+                                params["weight"],
+                                params["mark"],
+                            ))
+        self.conn.commit()
+        return True
+
+    @sql_term
+    def uploadAssignment(self, params: dict) -> bool:
+        self.cursor.execute("""
+            INSERT INTO
+                file
+                (TASK_ID, FILE_ID, FILE_NAME, AUTHOR, DATE)
+            values
+                (%s, %s, %s, %s, %s)""",
+                (params["TASK_ID"],
+                 params["FILE_ID"],
+                 params["FILE_NAME"],
+                 params["AUTHOR"],
+                 params["DATE"]))
+        self.conn.commit()
+
+        self.cursor.execute("""
+            UPDATE
+                assignment
+            SET
+                assignment.STATUS = "已繳交"
+            WHERE
+                assignment.TASK_ID = %s
+                AND assignment.PROJECT_ID = %s """,
+                            (params["TASK_ID"], params["projectUUID"]))
         self.conn.commit()
         return True
 

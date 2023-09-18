@@ -1,17 +1,20 @@
-#Code by AkinoAlice@Tyrant_Rex
+# Code by AkinoAlice@Tyrant_Rex
 
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi import FastAPI, UploadFile
+from shutil import copyfileobj
+from os import makedirs
 
 from authenticate import AUTHENTICATION
 
+import datetime
 import handler
 import uuid
-import datetime
 
 app = FastAPI(debug=True)
 
-#CORS config
+# CORS config
 origins = [
     "http://localhost",
     # [dev] port = page port
@@ -27,8 +30,10 @@ app.add_middleware(
 )
 
 # login api
+
+
 @app.post("/login", status_code=200)
-async def login(nid:str, password:str):
+async def login(nid: str, password: str):
     access = AUTHENTICATION()
     token = access.authenticate(nid, password)
 
@@ -43,11 +48,15 @@ async def login(nid:str, password:str):
         }
 
 # Logout api
+
+
 @app.post("/logout", status_code=200)
-async def logout(nid:str):
+async def logout(nid: str):
     ...
 
 # token validation api
+
+
 @app.post("/JWTValidation", status_code=200)
 async def JWTValidation(nid: str, token: str):
     access = AUTHENTICATION()
@@ -64,16 +73,72 @@ async def JWTValidation(nid: str, token: str):
         }
 
 # token validation api
+
+
 @app.post("/TimeoutStatus", status_code=200)
 async def TimeoutStatus(nid: str, token: str):
     access = AUTHENTICATION()
     timeout = access.verify_timeout(nid, token)
     return {
-       "timeout": timeout,
+        "timeout": timeout,
     }
-    # token_validation = access.verify_jwt_token(nid)
+
+# file download/upload  api
+
+
+# @app.get("/download/{taskID}/{fileID}/{filename}", status_code=200)
+# def downloadFile(nid: str, token: str, taskID: str, fileID: str, filename: str):
+#     access = AUTHENTICATION()
+#     token_validation = access.verify_jwt_token(nid, token)
+#     if not token_validation:
+#         return {
+#             "status_code": 403,
+#         }
+
+#     for i in [taskID, fileID, filename]:
+#         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+#             return {
+#                 "SQLInjectionCheck": False,
+#                 "status_code": 400
+#             }
+
+#     params = {
+#         "taskUUID": taskID,
+#         "fileID": fileID
+#     }
+
+#     file_name = handler.SQLHandler().downloadAssignment(params)
+
+#     file_path = f"{params['taskUUID']}/{params['fileID']}/{file_name}"
+#     return FileResponse(path=file_path)
+
+
+# @app.post("/upload/{taskID}/{fileID}/{filename}")
+# async def create_upload_file(nid: str, token: str, file: UploadFile, taskID: str, fileID: str, filename: str):
+#     access = AUTHENTICATION()
+#     token_validation = access.verify_jwt_token(nid, token)
+#     if not token_validation:
+#         return {
+#             "status_code": 403,
+#         }
+
+#     for i in [taskID, fileID, filename]:
+#         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+#             return {
+#                 "SQLInjectionCheck": False,
+#                 "status_code": 400
+#             }
+
+#     params = {
+#         "taskUUID": taskID,
+#         "fileID": fileID
+#     }
+#     file_path = f"{params['taskUUID']}/{params['fileID']}/{filename}"
+#     print(file_path)
 
 # subject
+
+
 @app.post("/getSubject", status_code=200)
 def getSubject(nid: str, token: str):
     access = AUTHENTICATION()
@@ -103,17 +168,18 @@ def getSubject(nid: str, token: str):
             "status_code": 500
         }
 
+
 @app.post("/createSubject", status_code=200)
 def createSubject(
-    nid: str,
-    token: str,
-    subjectName: str,
-    year: int,
-    startDate: str,
-    endDate: str,
-    settlementStartDate: str,
-    settlementEndDate: str
-):
+        nid: str,
+        token: str,
+        subjectName: str,
+        year: int,
+        startDate: str,
+        endDate: str,
+        settlementStartDate: str,
+        settlementEndDate: str):
+
     access = AUTHENTICATION()
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
@@ -125,7 +191,7 @@ def createSubject(
         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
             return {
                 "SQLInjectionCheck": False,
-            "status_code": 400
+                "status_code": 400
             }
 
     subjectData = {
@@ -149,6 +215,7 @@ def createSubject(
         return {
             "status_code": 500
         }
+
 
 @app.post("/deleteSubject", status_code=200)
 def deleteSubject(nid: str, token: str, subjectUUID: str):
@@ -175,6 +242,8 @@ def deleteSubject(nid: str, token: str, subjectUUID: str):
         }
 
 # project
+
+
 @app.post("/getProject", status_code=200)
 def getProject(nid: str, token: str, subjectUUID: str):
     access = AUTHENTICATION()
@@ -188,6 +257,7 @@ def getProject(nid: str, token: str, subjectUUID: str):
         "subjectUUID": subjectUUID,
         "NID": nid
     }
+
     project_data = handler.SQLHandler().getProjectData(projectData)
     if project_data or project_data == []:
         data_ = []
@@ -218,6 +288,7 @@ def getProject(nid: str, token: str, subjectUUID: str):
             "status_code": 500
         }
 
+
 @app.post("/createProject", status_code=200)
 def createProject(nid: str, token: str, subjectUUID: str, projectName: str):
     access = AUTHENTICATION()
@@ -231,7 +302,7 @@ def createProject(nid: str, token: str, subjectUUID: str, projectName: str):
         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
             return {
                 "SQLInjectionCheck": False,
-            "status_code": 400
+                "status_code": 400
             }
 
     params = {
@@ -249,6 +320,7 @@ def createProject(nid: str, token: str, subjectUUID: str, projectName: str):
         return {
             "status_code": 500
         }
+
 
 @app.post("/deleteProject", status_code=200)
 def deleteProject(nid: str, token: str, projectUUID: str):
@@ -273,6 +345,7 @@ def deleteProject(nid: str, token: str, projectUUID: str):
         return {
             "status_code": 500
         }
+
 
 @app.post("/getProjectInfo", status_code=200)
 def getProjectInfo(nid: str, token: str, projectUUID: str):
@@ -301,6 +374,8 @@ def getProjectInfo(nid: str, token: str, projectUUID: str):
     return data
 
 # student
+
+
 @app.post("/getStudentData", status_code=200)
 def getStudentData(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
@@ -329,6 +404,7 @@ def getStudentData(nid: str, token: str, projectUUID: str):
         return {
             "status_code": 500,
         }
+
 
 @app.post("/getStudentList", status_code=200)
 def getStudentList(nid: str, token: str, projectUUID):
@@ -359,6 +435,7 @@ def getStudentList(nid: str, token: str, projectUUID):
             "status_code": 500
         }
 
+
 @app.post("/newStudent", status_code=200)
 def newStudent(nid: str, token: str, projectUUID: str, studentNID: str):
     access = AUTHENTICATION()
@@ -387,6 +464,7 @@ def newStudent(nid: str, token: str, projectUUID: str, studentNID: str):
             "status_code": 500
         }
 
+
 @app.post("/deleteStudent", status_code=200)
 def deleteStudent(nid: str, token: str, studentNID: str, projectUUID: str):
     access = AUTHENTICATION()
@@ -413,6 +491,7 @@ def deleteStudent(nid: str, token: str, studentNID: str, projectUUID: str):
         return {
             "status_code": 500
         }
+
 
 @app.post("/getStudentInfo", status_code=200)
 def getStudentInfo(nid: str, token: str, studentNID: str):
@@ -441,6 +520,8 @@ def getStudentInfo(nid: str, token: str, studentNID: str):
         }
 
 # teacher
+
+
 @app.post("/getTeacherData", status_code=200)
 def getTeacherData(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
@@ -469,6 +550,7 @@ def getTeacherData(nid: str, token: str, projectUUID: str):
         return {
             "status_code": 500,
         }
+
 
 @app.post("/getTeacherList", status_code=200)
 def getTeacherList(nid: str, token: str, projectUUID):
@@ -499,6 +581,7 @@ def getTeacherList(nid: str, token: str, projectUUID):
             "status_code": 500
         }
 
+
 @app.post("/newTeacher", status_code=200)
 def newTeacher(nid: str, token: str, projectUUID: str, teacherNID: str):
     access = AUTHENTICATION()
@@ -527,6 +610,7 @@ def newTeacher(nid: str, token: str, projectUUID: str, teacherNID: str):
             "status_code": 500
         }
 
+
 @app.post("/deleteTeacher", status_code=200)
 def deleteTeacher(nid: str, token: str, teacherNID: str, projectUUID: str):
     access = AUTHENTICATION()
@@ -553,6 +637,7 @@ def deleteTeacher(nid: str, token: str, teacherNID: str, projectUUID: str):
         return {
             "status_code": 500
         }
+
 
 @app.post("/getTeacherInfo", status_code=200)
 def getTeacherInfo(nid: str, token: str, teacherNID: str):
@@ -581,6 +666,8 @@ def getTeacherInfo(nid: str, token: str, teacherNID: str):
         }
 
 # announcement
+
+
 @app.post("/getAnnouncementData", status_code=200)
 def getAnnouncementData(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
@@ -612,6 +699,7 @@ def getAnnouncementData(nid: str, token: str, projectUUID: str):
             "status_code": 500
         }
 
+
 @app.post("/createAnnouncement", status_code=200)
 def createAnnouncement(nid: str, token: str, projectUUID: str, title: str, context: str):
     access = AUTHENTICATION()
@@ -624,7 +712,7 @@ def createAnnouncement(nid: str, token: str, projectUUID: str, title: str, conte
         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
             return {
                 "SQLInjectionCheck": False,
-            "status_code": 400,
+                "status_code": 400,
             }
 
     params = {
@@ -645,8 +733,9 @@ def createAnnouncement(nid: str, token: str, projectUUID: str, title: str, conte
             "status_code": 500
         }
 
+
 @app.post("/deleteAnnouncement", status_code=200)
-def deleteAnnouncement(nid: str, token: str, announcementUUID: str):
+def deleteAnnouncement(nid: str, token: str, projectUUID: str, announcementUUID: str):
     access = AUTHENTICATION()
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
@@ -654,19 +743,25 @@ def deleteAnnouncement(nid: str, token: str, announcementUUID: str):
             "status_code": 403,
         }
 
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=announcementUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
+    for i in [projectUUID, announcementUUID]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
 
-    if handler.SQLHandler().deleteAnnouncement(announcementUUID):
+    params = {
+        "projectUUID": projectUUID,
+        "announcementUUID": announcementUUID
+    }
+    if handler.SQLHandler().deleteAnnouncement(params):
         return {
             "status_code": 200
         }
     return {
         "status_code": 500
     }
+
 
 @app.post("/getAnnouncementInfo", status_code=200)
 def getAnnouncementInfo(nid: str, token: str, announcementUUID: str):
@@ -698,6 +793,8 @@ def getAnnouncementInfo(nid: str, token: str, announcementUUID: str):
         }
 
 # group
+
+
 @app.post("/getGroupData", status_code=200)
 def getGroupData(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
@@ -720,6 +817,7 @@ def getGroupData(nid: str, token: str, projectUUID: str):
         return {
             "status_code": 500
         }
+
 
 @app.post("/newGroup", status_code=200)
 def newGroup(nid: str, token: str, projectUUID: str, member: str, group_name: str, GID):
@@ -751,6 +849,7 @@ def newGroup(nid: str, token: str, projectUUID: str, member: str, group_name: st
             "status_code": 500
         }
 
+
 @app.post("/getGroupToken", status_code=200)
 def getGroupToken(nid: str, token: str):
     access = AUTHENTICATION()
@@ -763,6 +862,7 @@ def getGroupToken(nid: str, token: str):
     return {
         "GID": str(uuid.uuid4())
     }
+
 
 @app.post("/getGroupTeacherData", status_code=200)
 def getGroupTeacherData(nid: str, token: str, projectUUID: str):
@@ -794,6 +894,7 @@ def getGroupTeacherData(nid: str, token: str, projectUUID: str):
             "status_code": 500
         }
 
+
 @app.post("/getGroupStudentData", status_code=200)
 def getGroupStudentData(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
@@ -824,6 +925,7 @@ def getGroupStudentData(nid: str, token: str, projectUUID: str):
             "status_code": 500
         }
 
+
 @app.post("/getGroupInfo", status_code=200)
 def getGroupInfo(nid: str, token: str, groupUUID: str):
     access = AUTHENTICATION()
@@ -849,6 +951,7 @@ def getGroupInfo(nid: str, token: str, groupUUID: str):
 
     return groupInfo
 
+
 @app.post("/deleteGroup", status_code=200)
 def deleteGroup(nid: str, token: str, groupUUID: str, projectUUID: str):
     access = AUTHENTICATION()
@@ -870,7 +973,279 @@ def deleteGroup(nid: str, token: str, groupUUID: str, projectUUID: str):
 
     handler.SQLHandler().deleteGroup(params)
 
-@app.get("/",status_code=200)
+# assignment
+
+
+@app.post("/getAssignment", status_code=200)
+def getAssignment(nid: str, token: str, projectUUID: str):
+    access = AUTHENTICATION()
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return {
+            "status_code": 403,
+        }
+
+    for i in [projectUUID]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+    params = {
+        "nid": nid,
+        "projectUUID": projectUUID
+    }
+    assignment_data = handler.SQLHandler().getAssignment(params)
+    if assignment_data or assignment_data == []:
+        return assignment_data
+    else:
+        return {
+            "status_code": 500
+        }
+
+
+@app.post("/downloadAssignment", status_code=200)
+def downloadAssignment(
+        nid: str,
+        token: str,
+        projectUUID: str,
+        taskUUID: str,
+        fileID: str):
+
+    access = AUTHENTICATION()
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return {
+            "status_code": 403,
+        }
+
+    for i in [taskUUID, fileID]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+    params = {
+        "taskUUID": taskUUID,
+        "fileID": fileID
+    }
+    file_name = handler.SQLHandler().downloadAssignment(params)
+
+    file_path = f"{projectUUID}/{params['taskUUID']}/{params['fileID']}/{file_name}"
+    return FileResponse(path=file_path)
+
+
+@app.post("/uploadAssignment", status_code=200)
+def uploadAssignment(
+        nid: str,
+        token: str,
+        projectUUID: str,
+        taskUUID: str,
+        filename: str,
+        file_: UploadFile):
+
+    access = AUTHENTICATION()
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return {
+            "status_code": 403,
+        }
+
+    for i in [projectUUID, taskUUID, filename]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+
+    file_id = str(uuid.uuid4())
+    file_path = f"./{projectUUID}/{taskUUID}/{file_id}/{filename}"
+    path = f"./{projectUUID}/{taskUUID}/{file_id}/"
+
+    makedirs(path)
+    with open(file_path, "wb+") as f:
+        copyfileobj(file_.file, f)
+
+    params = {
+        "TASK_ID": taskUUID,
+        "FILE_ID": file_id,
+        "FILE_NAME": filename,
+        "AUTHOR": nid,
+        "DATE": datetime.date.today(),
+        "projectUUID": projectUUID,
+    }
+    if handler.SQLHandler().uploadAssignment(params):
+        return {
+            "status_code": 200
+        }
+    else:
+        return {
+            "status_code": 500
+        }
+
+
+@app.post("/deleteAssignment", status_code=200)
+def deleteAssignment(nid: str, token: str, assignmentUUID: str, projectUUID: str):
+    access = AUTHENTICATION()
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return {
+            "status_code": 403,
+        }
+
+    for i in [projectUUID]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+
+    params = {
+        "project_id": projectUUID,
+        "task_id": assignmentUUID,
+    }
+
+    if handler.SQLHandler().deleteAssignment(params):
+        return {
+            "status_code": 200
+        }
+    else:
+        return {
+            "status_code": 500
+        }
+
+
+@app.post("/deleteAssignmentItem", status_code=200)
+def deleteAssignmentItem(nid: str, token: str, taskID: str, fileID: str, author: str):
+    access = AUTHENTICATION()
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return {
+            "status_code": 403,
+        }
+
+    for i in [taskID, fileID, author]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+
+    params = {
+        "taskID": taskID,
+        "fileID": fileID,
+        "author": author
+    }
+
+    if handler.SQLHandler().deleteAssignmentItem(params):
+        return {
+            "status_code": 200,
+        }
+    else:
+        return {
+            "status_code": 500
+        }
+@app.post("/markAssignmentScore", status_code=200)
+def markAssignmentScore(nid: str, token: str, projectUUID: str, taskUUID: str, marks: int):
+    access = AUTHENTICATION()
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return {
+            "status_code": 403,
+        }
+
+    for i in [projectUUID, taskUUID, marks]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+
+    params = {
+        "projectUUID": projectUUID,
+        "taskUUID": taskUUID,
+        "marks": marks
+    }
+    if handler.SQLHandler().markAssignmentScore(params):
+        return {
+            "status_code": 200
+        }
+    else:
+        return {
+            "status_code": 500
+        }
+
+
+@app.post("/newAssignment", status_code=200)
+def newAssignment(
+        nid: str,
+        token: str,
+        projectUUID: str,
+        gid: str,
+        name: str,
+        weight: int,
+        date: str):
+
+    access = AUTHENTICATION()
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return {
+            "status_code": 403,
+        }
+
+    for i in [projectUUID, gid, name, weight, date]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+
+    params = {
+        "task_id": str(uuid.uuid4()),
+        "projectUUID": projectUUID,
+        "name": name,
+        "status": "未完成",
+        "submission_date": date,
+        "gid": gid,
+        "uploader": nid,
+        "weight": weight,
+        "mark": 0
+    }
+
+    handler.SQLHandler().newAssignment(params)
+
+
+@app.post("/getAssignmentInfo", status_code=200)
+def getAssignmentInfo(nid: str, token: str, assignmentUUID: str, projectUUID: str):
+    access = AUTHENTICATION()
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return {
+            "status_code": 403,
+        }
+
+    for i in [projectUUID, assignmentUUID]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+
+    params = {
+        "task_id": assignmentUUID,
+        "project_id": projectUUID,
+    }
+
+    info = handler.SQLHandler().getAssignmentInfo(params)
+    if info and info != ():
+        return info
+    else:
+        return {
+            "status_code": 500
+        }
+
+
+@app.get("/", status_code=200)
 async def main_page():
     return {
         "status_code": 200,
