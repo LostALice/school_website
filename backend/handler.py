@@ -100,7 +100,7 @@ class SQLHandler:
         )
         )
 
-        # bind subject and creator
+        # bind project and student or teacher
         self.cursor.execute("""
             INSERT INTO member (
                 member.PROJECT_ID,
@@ -109,9 +109,7 @@ class SQLHandler:
             VALUES (
                 %s, %s
             );""", (
-            params["projectUUID"],
-            params["nid"],
-        )
+            params["projectUUID"], params["nid"])
         )
 
         # bind subject and project
@@ -417,10 +415,8 @@ class SQLHandler:
             login.NID, login.USERNAME
         FROM
             login
-        LEFT JOIN student
-            ON login.NID = student.NID
         WHERE
-            student.NID IS NULL AND login.NID LIKE "D%" """)
+            login.NID LIKE "D%" """)
 
         studentList = self.cursor.fetchall()
         return studentList
@@ -428,10 +424,25 @@ class SQLHandler:
     @sql_term
     def newStudent(self, params: dict = {}) -> bool:
         self.cursor.execute("""
-            INSERT INTO student
+            INSERT IGNORE INTO student
                 (student.PROJECT_ID, student.NID)
-            VALUES
-                (%s, %s)""", (params["projectUUID"], params["nid"]))
+            SELECT
+                %s, %s
+            WHERE EXISTS (
+                SELECT 1
+                FROM login
+                WHERE login.NID = %s);""",
+                            (params["projectUUID"], params["nid"], params["nid"]))
+        self.conn.commit()
+        self.cursor.execute("""
+            INSERT INTO member (
+                member.PROJECT_ID,
+                member.NID
+            )
+            VALUES (
+                %s, %s
+            );""",
+                            (params["projectUUID"], params["nid"]))
         self.conn.commit()
         return True
 
@@ -487,21 +498,34 @@ class SQLHandler:
             login.NID, login.USERNAME
         FROM
             login
-        LEFT JOIN teacher
-            ON login.NID = teacher.NID
         WHERE
-            teacher.NID IS NULL AND login.NID LIKE "T%" """)
+            login.NID LIKE "T%" """)
 
         teacherList = self.cursor.fetchall()
         return teacherList
 
     @sql_term
-    def newTeacher(self, params: dict = {}) -> bool:
+    def newTeacher(self, params: dict) -> bool:
         self.cursor.execute("""
-            INSERT INTO teacher
+            INSERT IGNORE  INTO teacher
                 (teacher.PROJECT_ID, teacher.NID)
-            VALUES
-                (%s, %s)""", (params["projectUUID"], params["nid"]))
+            SELECT
+                %s, %s
+            WHERE EXISTS (
+                SELECT 1
+                FROM login
+                WHERE login.NID = %s);""",
+                            (params["projectUUID"], params["nid"], params["nid"]))
+        self.conn.commit()
+        self.cursor.execute("""
+            INSERT INTO member (
+                member.PROJECT_ID,
+                member.NID
+            )
+            VALUES (
+                %s, %s
+            );""",
+                            (params["projectUUID"], params["nid"]))
         self.conn.commit()
         return True
 
@@ -588,7 +612,7 @@ class SQLHandler:
     @sql_term
     def newGroup(self, params: dict) -> bool:
         self.cursor.execute("""
-            INSERT INTO
+            INSERT IGNORE INTO
                 `group` (PROJECT_ID, GID, NID, NAME)
             VALUES
                 (%s, %s, %s, %s)""",
@@ -887,7 +911,7 @@ class SQLHandler:
                 file.TASK_ID = %s
                 AND file.FILE_ID = %s
                 AND file.AUTHOR = %s """,
-                (params["taskID"], params["fileID"], params["author"]))
+                            (params["taskID"], params["fileID"], params["author"]))
 
         self.conn.commit()
         return True
@@ -895,7 +919,7 @@ class SQLHandler:
     @sql_term
     def newAssignment(self, params: dict) -> bool:
         self.cursor.execute("""
-            INSERT INTO
+            INSERT IGNORE INTO
                 assignment
                 (
                     assignment.TASK_ID,
@@ -932,11 +956,11 @@ class SQLHandler:
                 (TASK_ID, FILE_ID, FILE_NAME, AUTHOR, DATE)
             values
                 (%s, %s, %s, %s, %s)""",
-                (params["TASK_ID"],
-                 params["FILE_ID"],
-                 params["FILE_NAME"],
-                 params["AUTHOR"],
-                 params["DATE"]))
+                            (params["TASK_ID"],
+                             params["FILE_ID"],
+                                params["FILE_NAME"],
+                                params["AUTHOR"],
+                                params["DATE"]))
         self.conn.commit()
 
         self.cursor.execute("""
@@ -951,7 +975,68 @@ class SQLHandler:
         self.conn.commit()
         return True
 
-# development only
-if __name__ == "__main__":
-    a = SQLHandler("D1177531", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiRDExNzc1MzEiLCJleHAiOjE2OTMyMDMyMjd9.0aRf7pmiPjtCVuumXNjMXEda9wukzUKZoEb0Hs3H23g")
-    b = a.getSubjectData()
+    @sql_term
+    def getIconImage(self, nid: str) -> str:
+        self.cursor.execute("""
+            SELECT
+                login.ICON
+            FROM
+                login
+            WHERE
+                login.NID = %s """,
+                            (nid,))
+
+        icon_name = str(self.cursor.fetchone()[0])
+        if icon_name == "default.png":
+            return icon_name
+
+        icon_name = f"{nid}/{icon_name}"
+        return icon_name
+
+    @sql_term
+    def changeIcon(self, params: dict) -> bool:
+        self.cursor.execute("""
+            UPDATE
+                login
+            SET
+                login.ICON = %s
+            WHERE
+                login.NID = %s""",
+                            (params["filename"], params["nid"]))
+        self.conn.commit()
+        return True
+
+    # dashboard
+
+    @sql_term
+    def getDeadlineProject(self, nid: str) -> list:
+        c = self.conn.cursor(dictionary=True)
+        c.execute("""
+        SELECT
+            assignment.TASK_ID, assignment.PROJECT_ID, assignment.NAME, assignment.SUBMISSION_DATE
+        FROM
+            assignment
+        JOIN member
+            ON assignment.PROJECT_ID = member.PROJECT_ID
+        JOIN `group` AS gp
+            ON gp.PROJECT_ID = member.PROJECT_ID AND gp.NID = member.NID AND gp.GID = assignment.GID
+        WHERE
+            member.NID = %s
+            AND assignment.STATUS = "未完成"
+            AND member.ENABLE = 1
+            AND gp.ENABLE = 1
+            AND assignment.ENABLE = 1
+        ORDER BY
+            ABS(DATEDIFF(assignment.SUBMISSION_DATE, NOW())) DESC""",
+                  (nid,))
+
+        return c.fetchall()
+
+    @sql_term
+    def getPermission(self, nid: str) -> int:
+        self.cursor.execute("""
+            SELECT login.PERMISSION
+            FROM login
+            WHERE login.NID = %s """,
+                            (nid,))
+        return self.cursor.fetchone()[0]
