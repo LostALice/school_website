@@ -8,10 +8,10 @@ from pandas import read_excel
 from inspect import stack
 
 from authenticate import AUTHENTICATION
+from handler import SQLHandler, LOGGER
 from permission import PERMISSION
 
 import datetime
-import handler
 import uuid
 import os
 
@@ -53,7 +53,7 @@ async def login(nid: str, password: str):
             "access": False,
         }
 
-# token validation api
+# token validation
 
 
 @app.get("/getPermissionLevel/{nid}/{token}", status_code=200)
@@ -85,8 +85,6 @@ async def JWTValidation(nid: str, token: str):
             "access": False,
         }
 
-# token validation api
-
 
 @app.get("/TimeoutStatus/{nid}/{token}", status_code=200)
 async def TimeoutStatus(nid: str, token: str):
@@ -108,6 +106,53 @@ async def TimeoutStatus(nid: str, token: str):
         "timeout": False
     }
 
+# Administration
+
+
+@app.get("/getLogs/{nid}/{token}", status_code=200)
+def getLog(nid: str, token: str):
+    access = AUTHENTICATION()
+    func_name = stack()[0][3]
+    if not access.permission_check(nid, func_name):
+        return HTTPException(403, "Access denied")
+
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return HTTPException(status_code=403, detail="Token invalid")
+
+    return LOGGER().record()
+
+
+@app.post("/forceChangePassword", status_code=200)
+def forceChangePassword(nid: str, token: str, target_nid: str, password: str):
+    access = AUTHENTICATION()
+    func_name = stack()[0][3]
+    if not access.permission_check(nid, func_name):
+        return HTTPException(403, "Access denied")
+
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return HTTPException(status_code=403, detail="Token invalid")
+
+    for i in [target_nid, password]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+
+
+    if access.forceChangePassword(target_nid, password):
+        return {
+            "status_code": 200
+        }
+    else:
+        return {
+            "status_code": 400
+        }
+
+# Subject
+
 
 @app.get("/getSubject/{nid}/{token}", status_code=200)
 def getSubject(nid: str, token: str):
@@ -120,7 +165,7 @@ def getSubject(nid: str, token: str):
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
 
-    subject_data = handler.SQLHandler().getSubjectData(nid)
+    subject_data = SQLHandler().getSubjectData(nid)
     data_ = []
     if subject_data or subject_data == []:
         for i in subject_data:
@@ -177,7 +222,7 @@ def createSubject(
         "nid": nid
     }
 
-    if handler.SQLHandler().createSubjectData(subjectData):
+    if SQLHandler().createSubjectData(subjectData):
         return {
             "status_code": 200,
             "subjectUUID": subjectData["subjectUUID"]
@@ -204,7 +249,7 @@ def deleteSubject(nid: str, token: str, subjectUUID: str):
             "SQLInjectionCheck": False,
             "status_code": 400
         }
-    success = handler.SQLHandler().deleteSubjectData(subjectUUID)
+    success = SQLHandler().deleteSubjectData(subjectUUID)
     if success:
         return {
             "status_code": 200
@@ -233,7 +278,7 @@ def getProject(nid: str, token: str, subjectUUID: str):
         "NID": nid
     }
 
-    project_data = handler.SQLHandler().getProjectData(projectData)
+    project_data = SQLHandler().getProjectData(projectData)
     if project_data or project_data == []:
         data_ = []
 
@@ -288,7 +333,7 @@ def createProject(nid: str, token: str, subjectUUID: str, projectName: str):
         "projectName": projectName,
         "nid": nid,
     }
-    if handler.SQLHandler().createProjectData(params):
+    if SQLHandler().createProjectData(params):
         return {
             "status_code": 200,
             "subjectUUID": params["projectUUID"],
@@ -315,7 +360,7 @@ def deleteProject(nid: str, token: str, projectUUID: str):
             "SQLInjectionCheck": False,
             "status_code": 400
         }
-    success = handler.SQLHandler().deleteProjectData(projectUUID)
+    success = SQLHandler().deleteProjectData(projectUUID)
     if success:
         return {
             "status_code": 200
@@ -342,7 +387,7 @@ def getProjectInfo(nid: str, token: str, projectUUID: str):
             "SQLInjectionCheck": False,
             "status_code": 400
         }
-    projectInfo = handler.SQLHandler().getProjectInfo(projectUUID)
+    projectInfo = SQLHandler().getProjectInfo(projectUUID)
     data = {
         "subjectUUID": projectInfo[0],
         "subjectName": projectInfo[1],
@@ -374,7 +419,7 @@ def getStudentData(nid: str, token: str, projectUUID: str):
             "status_code": 400
         }
 
-    studentData = handler.SQLHandler().getStudentData(projectUUID)
+    studentData = SQLHandler().getStudentData(projectUUID)
     if studentData or studentData == []:
         data = []
         for i in studentData:
@@ -406,7 +451,7 @@ def getStudentList(nid: str, token: str, projectUUID):
             "status_code": 400
         }
 
-    studentList = handler.SQLHandler().getStudentList()
+    studentList = SQLHandler().getStudentList()
     data = []
     if studentList or studentList == []:
         for i in studentList:
@@ -441,7 +486,7 @@ def newStudent(nid: str, token: str, projectUUID: str, studentNID: str):
         "nid": studentNID,
         "projectUUID": projectUUID,
     }
-    success = handler.SQLHandler().newStudent(params)
+    success = SQLHandler().newStudent(params)
     if success:
         return {
             "status_code": 200
@@ -472,7 +517,7 @@ def deleteStudent(nid: str, token: str, studentNID: str, projectUUID: str):
         "nid": studentNID,
         "projectUUID": projectUUID
     }
-    if handler.SQLHandler().deleteStudent(params):
+    if SQLHandler().deleteStudent(params):
         return {
             "status_code": 200
         }
@@ -499,7 +544,7 @@ def getStudentInfo(nid: str, token: str, studentNID: str):
             "status_code": 400
         }
 
-    studentInfo = handler.SQLHandler().getStudentInfo(studentNID)
+    studentInfo = SQLHandler().getStudentInfo(studentNID)
     if studentInfo:
         return {
             "name": studentInfo[0],
@@ -540,7 +585,7 @@ def importStudent(nid: str, token: str, projectUUID: str, file_: UploadFile):
             "nid": i,
             "projectUUID": projectUUID,
         }
-        success = handler.SQLHandler().newStudent(params)
+        success = SQLHandler().newStudent(params)
         if not success:
             return {
                 "status_code": 500
@@ -570,7 +615,7 @@ def getTeacherData(nid: str, token: str, projectUUID: str):
             "status_code": 400
         }
 
-    teacherData = handler.SQLHandler().getTeacherData(projectUUID)
+    teacherData = SQLHandler().getTeacherData(projectUUID)
     if teacherData or teacherData == []:
         data = []
         for i in teacherData:
@@ -585,7 +630,7 @@ def getTeacherData(nid: str, token: str, projectUUID: str):
         }
 
 
-@app.get("/getTeacherData/{nid}/{token}/{projectUUID}", status_code=200)
+@app.get("/getTeacherList/{nid}/{token}/{projectUUID}", status_code=200)
 def getTeacherList(nid: str, token: str, projectUUID):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
@@ -602,7 +647,7 @@ def getTeacherList(nid: str, token: str, projectUUID):
             "status_code": 400
         }
 
-    teacherList = handler.SQLHandler().getTeacherList()
+    teacherList = SQLHandler().getTeacherList()
     data = []
     if teacherList or teacherList == []:
         for i in teacherList:
@@ -637,7 +682,7 @@ def newTeacher(nid: str, token: str, projectUUID: str, teacherNID: str):
         "nid": teacherNID,
         "projectUUID": projectUUID,
     }
-    success = handler.SQLHandler().newTeacher(params)
+    success = SQLHandler().newTeacher(params)
     if success:
         return {
             "status_code": 200
@@ -668,7 +713,7 @@ def deleteTeacher(nid: str, token: str, teacherNID: str, projectUUID: str):
         "nid": teacherNID,
         "projectUUID": projectUUID
     }
-    if handler.SQLHandler().deleteTeacher(params):
+    if SQLHandler().deleteTeacher(params):
         return {
             "status_code": 200
         }
@@ -695,7 +740,7 @@ def getTeacherInfo(nid: str, token: str, teacherNID: str):
             "status_code": 400
         }
 
-    teacherInfo = handler.SQLHandler().getTeacherInfo(teacherNID)
+    teacherInfo = SQLHandler().getTeacherInfo(teacherNID)
     if teacherInfo:
         return {
             "name": teacherInfo[0],
@@ -736,7 +781,7 @@ def importTeacher(nid: str, token: str, projectUUID: str, file_: UploadFile):
             "nid": i,
             "projectUUID": projectUUID,
         }
-        success = handler.SQLHandler().newTeacher(params)
+        success = SQLHandler().newTeacher(params)
         if not success:
             return {
                 "status_code": 500
@@ -766,7 +811,7 @@ def getAnnouncementData(nid: str, token: str, projectUUID: str):
             "status_code": 400
         }
 
-    announcementData = handler.SQLHandler().getAnnouncementData(projectUUID)
+    announcementData = SQLHandler().getAnnouncementData(projectUUID)
     data = []
     if announcementData or announcementData == []:
         for i in announcementData:
@@ -808,7 +853,7 @@ def createAnnouncement(nid: str, token: str, projectUUID: str, title: str, conte
         "AUTHOR": nid,
         "LAST_EDIT": datetime.date.today()
     }
-    success = handler.SQLHandler().createAnnouncement(params)
+    success = SQLHandler().createAnnouncement(params)
     if success:
         return {
             "status_code": 200
@@ -841,7 +886,7 @@ def deleteAnnouncement(nid: str, token: str, projectUUID: str, announcementUUID:
         "projectUUID": projectUUID,
         "announcementUUID": announcementUUID
     }
-    if handler.SQLHandler().deleteAnnouncement(params):
+    if SQLHandler().deleteAnnouncement(params):
         return {
             "status_code": 200
         }
@@ -867,7 +912,7 @@ def getAnnouncementInfo(nid: str, token: str, announcementUUID: str):
             "status_code": 400
         }
 
-    announcementInfo = handler.SQLHandler().getAnnouncementInfo(announcementUUID)
+    announcementInfo = SQLHandler().getAnnouncementInfo(announcementUUID)
 
     if announcementInfo:
         return {
@@ -901,7 +946,7 @@ def getGroupData(nid: str, token: str, projectUUID: str):
             "status_code": 400
         }
 
-    groupData = handler.SQLHandler().getGroupData(projectUUID)
+    groupData = SQLHandler().getGroupData(projectUUID)
     if groupData or groupData == []:
         return groupData
     else:
@@ -933,7 +978,7 @@ def newGroup(nid: str, token: str, projectUUID: str, member: str, group_name: st
         "nid": member,
         "GID": GID
     }
-    if handler.SQLHandler().newGroup(params):
+    if SQLHandler().newGroup(params):
         return {
             "status_code": 200
         }
@@ -976,7 +1021,7 @@ def getGroupTeacherData(nid: str, token: str, projectUUID: str):
             "status_code": 400
         }
 
-    teacher_data = handler.SQLHandler().getGroupTeacherData(projectUUID)
+    teacher_data = SQLHandler().getGroupTeacherData(projectUUID)
     teacher_list = []
     for i in teacher_data:
         teacher_list.append({
@@ -990,7 +1035,7 @@ def getGroupTeacherData(nid: str, token: str, projectUUID: str):
         return []
 
 
-@app.get("/getGroupTeacherData/{nid}/{token}/{projectUUID}", status_code=200)
+@app.get("/getGroupStudentData/{nid}/{token}/{projectUUID}", status_code=200)
 def getGroupStudentData(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
@@ -1007,7 +1052,7 @@ def getGroupStudentData(nid: str, token: str, projectUUID: str):
             "status_code": 400
         }
 
-    student_data = handler.SQLHandler().getGroupStudentData(projectUUID)
+    student_data = SQLHandler().getGroupStudentData(projectUUID)
     student_list = []
     for i in student_data:
         student_list.append({
@@ -1038,7 +1083,7 @@ def getGroupInfo(nid: str, token: str, groupUUID: str):
             "status_code": 400
         }
 
-    groupInfo = handler.SQLHandler().getGroupInfo(groupUUID)
+    groupInfo = SQLHandler().getGroupInfo(groupUUID)
 
     for i in groupInfo:
         if groupInfo[i] == []:
@@ -1070,7 +1115,7 @@ def deleteGroup(nid: str, token: str, groupUUID: str, projectUUID: str):
         "projectUUID": projectUUID,
     }
 
-    handler.SQLHandler().deleteGroup(params)
+    SQLHandler().deleteGroup(params)
 
 # assignment
 
@@ -1096,7 +1141,7 @@ def getAssignment(nid: str, token: str, projectUUID: str):
         "nid": nid,
         "projectUUID": projectUUID
     }
-    assignment_data = handler.SQLHandler().getAssignment(params)
+    assignment_data = SQLHandler().getAssignment(params)
     if assignment_data or assignment_data == []:
         return assignment_data
     else:
@@ -1132,7 +1177,7 @@ def downloadAssignment(
         "taskUUID": taskUUID,
         "fileID": fileID
     }
-    file_name = handler.SQLHandler().downloadAssignment(params)
+    file_name = SQLHandler().downloadAssignment(params)
 
     file_path = f"assignment/{projectUUID}/{params['taskUUID']}/{params['fileID']}/{file_name}"
     return FileResponse(path=file_path)
@@ -1179,7 +1224,7 @@ def uploadAssignment(
         "DATE": datetime.date.today(),
         "projectUUID": projectUUID,
     }
-    if handler.SQLHandler().uploadAssignment(params):
+    if SQLHandler().uploadAssignment(params):
         return {
             "status_code": 200
         }
@@ -1212,7 +1257,7 @@ def deleteAssignment(nid: str, token: str, assignmentUUID: str, projectUUID: str
         "task_id": assignmentUUID,
     }
 
-    if handler.SQLHandler().deleteAssignment(params):
+    if SQLHandler().deleteAssignment(params):
         return {
             "status_code": 200
         }
@@ -1246,7 +1291,7 @@ def deleteAssignmentItem(nid: str, token: str, taskID: str, fileID: str, author:
         "author": author
     }
 
-    if handler.SQLHandler().deleteAssignmentItem(params):
+    if SQLHandler().deleteAssignmentItem(params):
         return {
             "status_code": 200,
         }
@@ -1279,7 +1324,7 @@ def markAssignmentScore(nid: str, token: str, projectUUID: str, taskUUID: str, m
         "taskUUID": taskUUID,
         "marks": marks
     }
-    if handler.SQLHandler().markAssignmentScore(params):
+    if SQLHandler().markAssignmentScore(params):
         return {
             "status_code": 200
         }
@@ -1327,7 +1372,7 @@ def newAssignment(
         "mark": 0
     }
 
-    handler.SQLHandler().newAssignment(params)
+    SQLHandler().newAssignment(params)
 
 
 @app.get("/getAssignmentInfo/{nid}/{token}/{projectUUID}/{assignmentUUID}", status_code=200)
@@ -1353,7 +1398,7 @@ def getAssignmentInfo(nid: str, token: str, assignmentUUID: str, projectUUID: st
         "project_id": projectUUID,
     }
 
-    info = handler.SQLHandler().getAssignmentInfo(params)
+    info = SQLHandler().getAssignmentInfo(params)
     if info and info != ():
         return info
     else:
@@ -1402,7 +1447,7 @@ async def getIconImages(nid: str, token: str):
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
-    icon_file_name = handler.SQLHandler().getIconImage(nid)
+    icon_file_name = SQLHandler().getIconImage(nid)
     return FileResponse(f"./icon/{icon_file_name}")
 
 
@@ -1439,7 +1484,7 @@ async def changeIcon(nid: str, token: str, file_: UploadFile, filename: str):
     with open(file_path, "wb+") as f:
         copyfileobj(file_.file, f)
 
-    handler.SQLHandler().changeIcon(params)
+    SQLHandler().changeIcon(params)
 
     return {
         "status_code": 200,
@@ -1459,7 +1504,7 @@ def getDeadlineProject(nid: str, token: str):
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
 
-    data = handler.SQLHandler().getDeadlineProject(nid)
+    data = SQLHandler().getDeadlineProject(nid)
     if data:
         return {
             "status_code": 200,

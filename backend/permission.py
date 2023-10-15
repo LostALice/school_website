@@ -1,7 +1,6 @@
 # Code by AkinoAlice@Tyrant_Rex
 
 from handler import SQLHandler
-from os import getcwd, chdir
 import json
 
 

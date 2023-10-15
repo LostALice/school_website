@@ -206,8 +206,10 @@ class AUTHENTICATION(SQLHandler):
         sha256.update(string.encode("utf8"))
         new_hashed_password = sha256.hexdigest()
 
-        self.cursor.execute(
-            "SELECT * FROM login WHERE `NID` = %s and `PASSWORD` = %s;", (nid, new_hashed_password))
+        self.cursor.execute("""
+            SELECT * FROM login
+            WHERE login.NID = %s and `PASSWORD` = %s;""",
+                            (nid, new_hashed_password))
 
         if not self.cursor.fetchall():
             return False
@@ -226,7 +228,9 @@ class AUTHENTICATION(SQLHandler):
         self.conn.commit()
         token = self.generate_jwt_token(nid)
         self.cursor.execute(
-            "UPDATE login SET `NID` = %s, `TOKEN` = %s WHERE `NID` = %s;", (nid, token, nid))
+            """UPDATE login
+            SET `NID` = %s, `TOKEN` = %s WHERE `NID` = %s;""",
+            (nid, token, nid))
         self.conn.commit()
         self.conn.close()
 
@@ -275,8 +279,33 @@ class AUTHENTICATION(SQLHandler):
         else:
             return False
 
+    def forceChangePassword(self, nid: str, password: str):
+        new_password = self.add_salt(nid, password)
+        self.cursor.execute("""
+            UPDATE
+                login
+            SET
+                login.PASSWORD = %s
+            WHERE
+                login.NID = %s """,
+                            (new_password, nid))
+
+        self.conn.commit()
+
+        token = self.generate_jwt_token(nid)
+        self.cursor.execute("""
+            UPDATE login
+            SET login.NID = %s, login.TOKEN = %s
+            WHERE login.NID = %s;""",
+            (nid, token, nid))
+
+        self.conn.commit()
+        self.conn.close()
+        return True
+
     def permission_check(self, nid: str, func_name) -> bool:
         return PERMISSION(nid).check_permission(func_name)
+
 
 if __name__ == "__main__":
     a = AUTHENTICATION()

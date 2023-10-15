@@ -41,17 +41,20 @@
         "deleteTeacher": 2,
         "importTeacher": 2,
         "createAnnouncement": 2,
+        "deleteAnnouncement":2,
         "newGroup": 2,
         "getGroupToken": 2,
         "deleteGroup": 2,
         "markAssignmentScore": 2,
-        "newAssignment": 2
+        "newAssignment": 2,
+        "getLog": 3,
+        "forceChangePassword": 3
     },
     "database": {
-        "database": "test",
-        "host": "localhost",
-        "user": "root",
-        "password": "Zyon-56241428"
+        "DATABASE": "test",
+        "HOST": "localhost",
+        "USER": "root",
+        "PASSWORD": "Zyon-56241428"
     },
     "JWT": {
         "JWT_TOKEN_EXPIRE_TIME": 3600,

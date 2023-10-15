@@ -1,6 +1,7 @@
 # Code by AkinoAlice@Tyrant_Rex
 
 import mysql.connector as connector
+import json
 
 
 class SQLHandler:
@@ -14,25 +15,22 @@ class SQLHandler:
                 JWT_SECRET  # any string
                 JWT_ALGORITHM # HMAC, RSA, ECDSA, etc
         """
-        self.DATABASE = "test"
-        self.HOST = "localhost"
-        self.USER = "root"
-        self.PASSWORD = "Zyon-56241428"
+        try:
+            with open("setting.json", "r") as f:
+                json_file = json.load(f)
+                self.database_setting = json_file["database"]
+                self.JWT_setting = json_file["JWT"]
+        except Exception as error:
+            raise error
 
-        # for environment variables
-        # self.DATABASE = os.getenv("SQL_DATABASE")
-        # self.HOST = os.getenv("SQL_HOST")
-        # self.USER = os.getenv("SQL_USER")
-        # self.PASSWORD = os.getenv("SQL_PASSWORD")
+        self.DATABASE = self.database_setting["DATABASE"]
+        self.HOST = self.database_setting["HOST"]
+        self.USER = self.database_setting["USER"]
+        self.PASSWORD = self.database_setting["PASSWORD"]
 
-        self.JWT_TOKEN_EXPIRE_TIME = 3600  # Token valid for 1 Hour
-        self.JWT_SECRET = "My wife is kurumi"   # Encryption and decryption key
-        # encryption and decryption algorithm e.g.
-        self.JWT_ALGORITHM = "HS256"
-
-        # self.JWT_TOKEN_EXPIRE_TIME = os.getenv("JWT_TOKEN_EXPIRE_TIME")
-        # self.JWT_SECRET = os.getenv("JWT_SECRET")
-        # self.JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
+        self.JWT_TOKEN_EXPIRE_TIME = self.JWT_setting["JWT_TOKEN_EXPIRE_TIME"]
+        self.JWT_SECRET = self.JWT_setting["JWT_SECRET"]
+        self.JWT_ALGORITHM = self.JWT_setting["JWT_ALGORITHM"]
 
         self.conn = connector.connect(
             database=self.DATABASE,
@@ -46,6 +44,7 @@ class SQLHandler:
     def sql_term(func) -> any:
         def warp(self, *data):
             _ = func(self, *data)
+            LOGGER().log(func.__name__, data)
             self.conn.close()
             return _
         return warp
@@ -470,10 +469,6 @@ class SQLHandler:
         info = self.cursor.fetchone()
         return info
 
-    @sql_term
-    def importStudent(self, projectUUID: str = "") -> bool:
-        ...
-
     # teacher
     @sql_term
     def getTeacherData(self, projectUUID: str = "") -> dict:
@@ -552,10 +547,6 @@ class SQLHandler:
                 login.NID = %s""", (nid,))
         info = self.cursor.fetchone()
         return info
-
-    @sql_term
-    def importTeacher(self, projectUUID: str = "") -> bool:
-        ...
 
     # group
     @sql_term
@@ -1040,3 +1031,22 @@ class SQLHandler:
             WHERE login.NID = %s """,
                             (nid,))
         return self.cursor.fetchone()[0]
+
+
+class LOGGER(SQLHandler):
+    def __init__(self):
+        self.sql_init()
+        self.cursor = self.conn.cursor(dictionary=True)
+
+    def log(self, event: str, args:  list) -> None:
+        self.cursor.execute("""
+            INSERT INTO log
+                (log.EVENT, log.ARGs)
+            VALUES
+                (%s, %s)""", (event, str(args)))
+
+        self.conn.commit()
+
+    def record(self) -> list:
+        self.cursor.execute("""SELECT * FROM log LIMIT 1000""")
+        return self.cursor.fetchall()
