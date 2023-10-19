@@ -1,8 +1,9 @@
 # Code by AkinoAlice@Tyrant_Rex
 
+from setup import SQLSetupHandler, SettingSetupHandler
+
 import mysql.connector as connector
 import json
-
 
 class SQLHandler:
     def __init__(self):
@@ -21,6 +22,7 @@ class SQLHandler:
                 self.database_setting = json_file["database"]
                 self.JWT_setting = json_file["JWT"]
         except Exception as error:
+            SettingSetupHandler()
             raise error
 
         self.DATABASE = self.database_setting["DATABASE"]
@@ -32,12 +34,17 @@ class SQLHandler:
         self.JWT_SECRET = self.JWT_setting["JWT_SECRET"]
         self.JWT_ALGORITHM = self.JWT_setting["JWT_ALGORITHM"]
 
-        self.conn = connector.connect(
-            database=self.DATABASE,
-            host=self.HOST,
-            user=self.USER,
-            password=self.PASSWORD,
-        )
+        try:
+            self.conn = connector.connect(
+                database=self.DATABASE,
+                host=self.HOST,
+                user=self.USER,
+                password=self.PASSWORD,
+            )
+        except Exception as e:
+            print(e)
+            SQLSetupHandler()
+
         self.cursor = self.conn.cursor()
 
     # close the connection after query executed
@@ -133,6 +140,12 @@ class SQLHandler:
             UPDATE subject
             SET subject.ENABLE = 0
             WHERE subject.SUBJECT_ID = %s ;
+        """, (subjectUUID,))
+        self.conn.commit()
+        self.cursor.execute("""
+            UPDATE project
+            SET project.ENABLE = 0
+            WHERE project.SUBJECT_ID = %s;;
         """, (subjectUUID,))
         self.conn.commit()
         return True
@@ -301,6 +314,37 @@ class SQLHandler:
             SET project.ENABLE = 0
             WHERE project.PROJECT_ID = %s ;
         """, (projectUUID,))
+
+        self.cursor.execute("""
+            UPDATE announcements
+            SET announcements.ENABLE = 0
+            WHERE announcements.PROJECT_ID = %s ;
+        """, (projectUUID,))
+
+        self.cursor.execute("""
+            UPDATE assignment
+            SET assignment.ENABLE = 0
+            WHERE assignment.PROJECT_ID = %s ;
+        """, (projectUUID,))
+
+        self.cursor.execute("""
+            UPDATE `group`
+            SET `group`.ENABLE = 0
+            WHERE `group`.PROJECT_ID = %s ;
+        """, (projectUUID,))
+
+        self.cursor.execute("""
+            UPDATE student
+            SET student.ENABLE = 0
+            WHERE student.PROJECT_ID = %s ;
+        """, (projectUUID,))
+
+        self.cursor.execute("""
+            UPDATE teacher
+            SET teacher.ENABLE = 0
+            WHERE teacher.PROJECT_ID = %s ;
+        """, (projectUUID,))
+
         self.conn.commit()
         return True
 
@@ -1048,5 +1092,5 @@ class LOGGER(SQLHandler):
         self.conn.commit()
 
     def record(self) -> list:
-        self.cursor.execute("""SELECT * FROM log LIMIT 1000""")
+        self.cursor.execute("""SELECT * FROM log LIMIT 5000""")
         return self.cursor.fetchall()

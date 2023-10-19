@@ -6,8 +6,11 @@ import json
 
 class PERMISSION(object):
     """
+        IMPORTANT new function from authenticate.py should regis to setting.json
+        or else it cause exception
         This module based on the permission setting of setting.json
         If you want to change the permission setting, you can edit the setting.json
+
     """
     def __init__(self, nid: str) -> None:
         self.nid = nid
@@ -38,7 +41,3 @@ class PERMISSION(object):
         if self.permission_level >= self.permission_setting[func_name]:
             return True
         return False
-
-
-if __name__ == "__main__":
-    ...

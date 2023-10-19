@@ -3,6 +3,7 @@
 from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from setup import SettingSetupHandler
 from shutil import copyfileobj
 from pandas import read_excel
 from inspect import stack
@@ -12,10 +13,20 @@ from handler import SQLHandler, LOGGER
 from permission import PERMISSION
 
 import datetime
+import json
 import uuid
 import os
 
-app = FastAPI(debug=True)
+try:
+    assert os.path.exists("./setting.json")
+except AssertionError:
+    SettingSetupHandler().file_setup()
+
+with open("./setting.json", "r") as f:
+    json_file = json.load(f)
+    DEBUG = json_file["debug"]
+
+app = FastAPI(debug=DEBUG)
 
 # CORS config
 origins = [
@@ -1520,4 +1531,4 @@ def getDeadlineProject(nid: str, token: str):
 if __name__ == "__main__":
     # development only
     # uvicorn main:app --reload
-    app.run(debug=True)
+    app.run(debug=DEBUG)
