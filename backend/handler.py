@@ -478,7 +478,7 @@ class SQLHandler:
                             (params["projectUUID"], params["nid"], params["nid"]))
         self.conn.commit()
         self.cursor.execute("""
-            INSERT INTO member (
+            INSERT IGNORE INTO member (
                 member.PROJECT_ID,
                 member.NID
             )
@@ -546,7 +546,7 @@ class SQLHandler:
     @sql_term
     def newTeacher(self, params: dict) -> bool:
         self.cursor.execute("""
-            INSERT IGNORE  INTO teacher
+            INSERT IGNORE INTO teacher
                 (teacher.PROJECT_ID, teacher.NID)
             SELECT
                 %s, %s
