@@ -270,7 +270,7 @@ class AUTHENTICATION(SQLHandler):
         except jwt.exceptions.DecodeError as error:
             return False
         except Exception as error:
-            print(error)
+            print(error, flush=True)
             return False
 
         self.cursor.execute("SELECT * FROM login WHERE TOKEN = %s;", (token,))
@@ -305,9 +305,3 @@ class AUTHENTICATION(SQLHandler):
 
     def permission_check(self, nid: str, func_name) -> bool:
         return PERMISSION(nid).check_permission(func_name)
-
-
-if __name__ == "__main__":
-    a = AUTHENTICATION()
-    b = a.permission_check("D1177531", "deleteAssignmentItem")
-    print(b)

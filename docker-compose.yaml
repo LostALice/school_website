@@ -1,0 +1,38 @@
+services:
+    pms:
+        image: pms-backend:1697773731
+        container_name: pms-backend
+        environment:
+            # - DATABASE="pms" optional
+            # - HOST="localhost" optional
+            - USER="root"
+            - PASSWORD="Abc!@#$%^&*()" # should be same as mysql.MYSQL_ROOT_PASSWORD
+            - JWT_SECRET="Xyz)(*&^%$#@!)"
+        ports:
+        - 8081:8080
+        restart: unless-stopped
+    mysql:
+        image: mysql:latest
+        environment:
+            # should be same as pms.PASSWORD
+            - MYSQL_ROOT_PASSWORD="Abc!@#$%^&*()"
+        restart: unless-stopped
+
+    # recommand nginx configuration
+    # using local build image
+    frontend:
+        image: pms-frontend:1697901870
+        container_name: pms-frontend
+        ports:
+        - 8082:80
+        restart: unless-stopped
+
+    # using map volume
+    # frontend:
+    #     image: nginx:latest
+    #     volumes:
+    #         - /dist:/usr/share/nginx/html
+    #     restart: unless-stopped
+    #     ports:
+    #     - 8082:80
+    #     restart: unless-stopped

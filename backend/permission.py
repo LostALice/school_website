@@ -25,7 +25,7 @@ class PERMISSION(object):
             with open("setting.json", "r") as f:
                 self.permission_setting = json.load(f)["permissions"]
         except Exception as error:
-            print(error)
+            print(error, flush=True)
             raise FileNotFoundError("File not found: setting.json ")
 
     def __str__(self) -> str:

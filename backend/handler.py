@@ -42,7 +42,7 @@ class SQLHandler:
                 password=self.PASSWORD,
             )
         except Exception as e:
-            print(e)
+            print(e, flush=True)
             SQLSetupHandler()
 
         self.cursor = self.conn.cursor()
@@ -1074,8 +1074,12 @@ class SQLHandler:
             FROM login
             WHERE login.NID = %s """,
                             (nid,))
-        return self.cursor.fetchone()[0]
 
+        permission = self.cursor.fetchone()
+        if permission:
+            return permission[0]
+        else:
+            return 0
 
 class LOGGER(SQLHandler):
     def __init__(self):

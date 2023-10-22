@@ -29,19 +29,27 @@ with open("./setting.json", "r") as f:
 app = FastAPI(debug=DEBUG)
 
 # CORS config
-origins = [
-    "http://localhost",
-    # [dev] port = page port
-    "http://localhost:8080",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/", status_code=200)
+async def get_test():
+    return {
+        "status": "OK",
+    }
+
+
+@app.post("/", status_code=200)
+async def post_test():
+    return {
+        "status": "OK",
+    }
 
 # login api
 
@@ -67,10 +75,18 @@ async def login(nid: str, password: str):
 # token validation
 
 
-@app.get("/getPermissionLevel/{nid}/{token}", status_code=200)
+@app.get("/getPermissionLevel/", status_code=200)
 async def getPermissionLevel(nid: str, token: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    for i in [nid, token]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
@@ -81,6 +97,14 @@ async def getPermissionLevel(nid: str, token: str):
 async def JWTValidation(nid: str, token: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    for i in [nid, token]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
@@ -97,10 +121,18 @@ async def JWTValidation(nid: str, token: str):
         }
 
 
-@app.get("/TimeoutStatus/{nid}/{token}", status_code=200)
+@app.get("/TimeoutStatus/", status_code=200)
 async def TimeoutStatus(nid: str, token: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    for i in [nid, token]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
@@ -120,10 +152,18 @@ async def TimeoutStatus(nid: str, token: str):
 # Administration
 
 
-@app.get("/getLogs/{nid}/{token}", status_code=200)
+@app.get("/getLogs/", status_code=200)
 def getLog(nid: str, token: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    for i in [nid, token]:
+        if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
@@ -138,12 +178,6 @@ def getLog(nid: str, token: str):
 def forceChangePassword(nid: str, token: str, target_nid: str, password: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
-    if not access.permission_check(nid, func_name):
-        return HTTPException(403, "Access denied")
-
-    token_validation = access.verify_jwt_token(nid, token)
-    if not token_validation:
-        return HTTPException(status_code=403, detail="Token invalid")
 
     for i in [target_nid, password]:
         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
@@ -151,6 +185,13 @@ def forceChangePassword(nid: str, token: str, target_nid: str, password: str):
                 "SQLInjectionCheck": False,
                 "status_code": 400
             }
+
+    if not access.permission_check(nid, func_name):
+        return HTTPException(403, "Access denied")
+
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return HTTPException(status_code=403, detail="Token invalid")
 
 
     if access.forceChangePassword(target_nid, password):
@@ -165,7 +206,7 @@ def forceChangePassword(nid: str, token: str, target_nid: str, password: str):
 # Subject
 
 
-@app.get("/getSubject/{nid}/{token}", status_code=200)
+@app.get("/getSubject", status_code=200)
 def getSubject(nid: str, token: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
@@ -244,7 +285,7 @@ def createSubject(
         }
 
 
-@app.delete("/deleteSubject/{nid}/{token}/{subjectUUID}", status_code=200)
+@app.delete("/deleteSubject", status_code=200)
 def deleteSubject(nid: str, token: str, subjectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
@@ -273,10 +314,17 @@ def deleteSubject(nid: str, token: str, subjectUUID: str):
 # project
 
 
-@app.get("/getProject/{nid}/{token}/{subjectUUID}", status_code=200)
+@app.get("/getProject/", status_code=200)
 def getProject(nid: str, token: str, subjectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    for i in [subjectUUID]:
+        if not access.SQLInjectionCheck(prompt=i):
+            return {
+                "SQLInjectionCheck": False,
+                "status_code": 400
+            }
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
@@ -355,10 +403,17 @@ def createProject(nid: str, token: str, subjectUUID: str, projectName: str):
         }
 
 
-@app.delete("/deleteProject/{nid}/{token}/{projectUUID}", status_code=200)
+@app.delete("/deleteProject/", status_code=200)
 def deleteProject(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=projectUUID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
@@ -366,11 +421,6 @@ def deleteProject(nid: str, token: str, projectUUID: str):
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
 
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=projectUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
     success = SQLHandler().deleteProjectData(projectUUID)
     if success:
         return {
@@ -382,10 +432,17 @@ def deleteProject(nid: str, token: str, projectUUID: str):
         }
 
 
-@app.get("/getProjectInfo/{nid}/{token}/{projectUUID}", status_code=200)
+@app.get("/getProjectInfo/", status_code=200)
 def getProjectInfo(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=projectUUID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
@@ -393,11 +450,6 @@ def getProjectInfo(nid: str, token: str, projectUUID: str):
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
 
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=projectUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
     projectInfo = SQLHandler().getProjectInfo(projectUUID)
     data = {
         "subjectUUID": projectInfo[0],
@@ -413,22 +465,23 @@ def getProjectInfo(nid: str, token: str, projectUUID: str):
 # student
 
 
-@app.get("/getStudentData/{nid}/{token}/{projectUUID}", status_code=200)
+@app.get("/getStudentData/", status_code=200)
 def getStudentData(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=projectUUID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
-
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=projectUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
 
     studentData = SQLHandler().getStudentData(projectUUID)
     if studentData or studentData == []:
@@ -508,22 +561,24 @@ def newStudent(nid: str, token: str, projectUUID: str, studentNID: str):
         }
 
 
-@app.delete("/deleteStudent/{nid}/{token}/{studentNID}/{projectUUID}", status_code=200)
+@app.delete("/deleteStudent/", status_code=200)
 def deleteStudent(nid: str, token: str, studentNID: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
-    if not access.permission_check(nid, func_name):
-        return HTTPException(403, "Access denied")
 
-    token_validation = access.verify_jwt_token(nid, token)
-    if not token_validation:
-        return HTTPException(status_code=403, detail="Token invalid")
     for i in [studentNID, projectUUID]:
         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
             return {
                 "SQLInjectionCheck": False,
                 "status_code": 400
             }
+
+    if not access.permission_check(nid, func_name):
+        return HTTPException(403, "Access denied")
+
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return HTTPException(status_code=403, detail="Token invalid")
     params = {
         "nid": studentNID,
         "projectUUID": projectUUID
@@ -538,22 +593,23 @@ def deleteStudent(nid: str, token: str, studentNID: str, projectUUID: str):
         }
 
 
-@app.get("/getStudentInfo/{nid}/{token}/{studentNID}", status_code=200)
+@app.get("/getStudentInfo/", status_code=200)
 def getStudentInfo(nid: str, token: str, studentNID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=studentNID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
-
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=studentNID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
 
     studentInfo = SQLHandler().getStudentInfo(studentNID)
     if studentInfo:
@@ -609,22 +665,23 @@ def importStudent(nid: str, token: str, projectUUID: str, file_: UploadFile):
 # teacher
 
 
-@app.get("/getTeacherData/{nid}/{token}/{projectUUID}", status_code=200)
+@app.get("/getTeacherData/", status_code=200)
 def getTeacherData(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=projectUUID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
-
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=projectUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
 
     teacherData = SQLHandler().getTeacherData(projectUUID)
     if teacherData or teacherData == []:
@@ -641,22 +698,23 @@ def getTeacherData(nid: str, token: str, projectUUID: str):
         }
 
 
-@app.get("/getTeacherList/{nid}/{token}/{projectUUID}", status_code=200)
+@app.get("/getTeacherList/", status_code=200)
 def getTeacherList(nid: str, token: str, projectUUID):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=projectUUID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
-
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=projectUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
 
     teacherList = SQLHandler().getTeacherList()
     data = []
@@ -704,26 +762,30 @@ def newTeacher(nid: str, token: str, projectUUID: str, teacherNID: str):
         }
 
 
-@app.delete("/deleteTeacher/{nid}/{token}/{teacherNID}/{projectUUID}", status_code=200)
+@app.delete("/deleteTeacher/", status_code=200)
 def deleteTeacher(nid: str, token: str, teacherNID: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
-    if not access.permission_check(nid, func_name):
-        return HTTPException(403, "Access denied")
 
-    token_validation = access.verify_jwt_token(nid, token)
-    if not token_validation:
-        return HTTPException(status_code=403, detail="Token invalid")
     for i in [teacherNID, projectUUID]:
         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
             return {
                 "SQLInjectionCheck": False,
                 "status_code": 400
             }
+
+    if not access.permission_check(nid, func_name):
+        return HTTPException(403, "Access denied")
+
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return HTTPException(status_code=403, detail="Token invalid")
+
     params = {
         "nid": teacherNID,
         "projectUUID": projectUUID
     }
+
     if SQLHandler().deleteTeacher(params):
         return {
             "status_code": 200
@@ -734,22 +796,23 @@ def deleteTeacher(nid: str, token: str, teacherNID: str, projectUUID: str):
         }
 
 
-@app.get("/getTeacherInfo/{nid}/{token}/{teacherNID}", status_code=200)
+@app.get("/getTeacherInfo/", status_code=200)
 def getTeacherInfo(nid: str, token: str, teacherNID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=teacherNID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
-
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=teacherNID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
 
     teacherInfo = SQLHandler().getTeacherInfo(teacherNID)
     if teacherInfo:
@@ -805,22 +868,23 @@ def importTeacher(nid: str, token: str, projectUUID: str, file_: UploadFile):
 # announcement
 
 
-@app.get("/getAnnouncementData/{nid}/{token}/{projectUUID}", status_code=200)
+@app.get("/getAnnouncementData/", status_code=200)
 def getAnnouncementData(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=projectUUID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
-
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=projectUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
 
     announcementData = SQLHandler().getAnnouncementData(projectUUID)
     data = []
@@ -875,7 +939,7 @@ def createAnnouncement(nid: str, token: str, projectUUID: str, title: str, conte
         }
 
 
-@app.delete("/deleteAnnouncement/{nid}/{token}/{projectUUID}/{announcementUUID}", status_code=200)
+@app.delete("/deleteAnnouncement/", status_code=200)
 def deleteAnnouncement(nid: str, token: str, projectUUID: str, announcementUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
@@ -906,22 +970,23 @@ def deleteAnnouncement(nid: str, token: str, projectUUID: str, announcementUUID:
     }
 
 
-@app.get("/getAnnouncementInfo/{nid}/{token}/{announcementUUID}", status_code=200)
+@app.get("/getAnnouncementInfo/", status_code=200)
 def getAnnouncementInfo(nid: str, token: str, announcementUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=announcementUUID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
-
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=announcementUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
 
     announcementInfo = SQLHandler().getAnnouncementInfo(announcementUUID)
 
@@ -940,22 +1005,23 @@ def getAnnouncementInfo(nid: str, token: str, announcementUUID: str):
 # group
 
 
-@app.get("/getGroupData/{nid}/{token}/{projectUUID}", status_code=200)
+@app.get("/getGroupData/", status_code=200)
 def getGroupData(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=projectUUID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
-
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=projectUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
 
     groupData = SQLHandler().getGroupData(projectUUID)
     if groupData or groupData == []:
@@ -999,12 +1065,18 @@ def newGroup(nid: str, token: str, projectUUID: str, member: str, group_name: st
         }
 
 
-@app.get("/getGroupToken/{nid}/{token}", status_code=200)
+@app.get("/getGroupToken/", status_code=200)
 def getGroupToken(nid: str, token: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
+
+    if not AUTHENTICATION().SQLInjectionCheck(prompt=nid):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
 
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
@@ -1015,22 +1087,23 @@ def getGroupToken(nid: str, token: str):
     }
 
 
-@app.get("/getGroupTeacherData/{nid}/{token}/{projectUUID}", status_code=200)
+@app.get("/getGroupTeacherData/", status_code=200)
 def getGroupTeacherData(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
-    if not access.permission_check(nid, func_name):
-        return HTTPException(403, "Access denied")
-
-    token_validation = access.verify_jwt_token(nid, token)
-    if not token_validation:
-        return HTTPException(status_code=403, detail="Token invalid")
 
     if not AUTHENTICATION().SQLInjectionCheck(prompt=projectUUID):
         return {
             "SQLInjectionCheck": False,
             "status_code": 400
         }
+
+    if not access.permission_check(nid, func_name):
+        return HTTPException(403, "Access denied")
+
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return HTTPException(status_code=403, detail="Token invalid")
 
     teacher_data = SQLHandler().getGroupTeacherData(projectUUID)
     teacher_list = []
@@ -1046,22 +1119,23 @@ def getGroupTeacherData(nid: str, token: str, projectUUID: str):
         return []
 
 
-@app.get("/getGroupStudentData/{nid}/{token}/{projectUUID}", status_code=200)
+@app.get("/getGroupStudentData/", status_code=200)
 def getGroupStudentData(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=projectUUID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
-
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=projectUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
 
     student_data = SQLHandler().getGroupStudentData(projectUUID)
     student_list = []
@@ -1077,22 +1151,23 @@ def getGroupStudentData(nid: str, token: str, projectUUID: str):
         return []
 
 
-@app.get("/getGroupInfo/{nid}/{token}/{groupUUID}", status_code=200)
+@app.get("/getGroupInfo/", status_code=200)
 def getGroupInfo(nid: str, token: str, groupUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=groupUUID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
-
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=groupUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
 
     groupInfo = SQLHandler().getGroupInfo(groupUUID)
 
@@ -1105,22 +1180,23 @@ def getGroupInfo(nid: str, token: str, groupUUID: str):
     return groupInfo
 
 
-@app.delete("/deleteGroup/{nid}/{token}/{GID}/{projectUUID}", status_code=200)
+@app.delete("/deleteGroup/", status_code=200)
 def deleteGroup(nid: str, token: str, groupUUID: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=groupUUID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
     token_validation = access.verify_jwt_token(nid, token)
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
-
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=groupUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
     params = {
         "groupUUID": groupUUID,
         "projectUUID": projectUUID,
@@ -1131,16 +1207,10 @@ def deleteGroup(nid: str, token: str, groupUUID: str, projectUUID: str):
 # assignment
 
 
-@app.get("/getAssignment/{nid}/{token}/{projectUUID}", status_code=200)
+@app.get("/getAssignment/", status_code=200)
 def getAssignment(nid: str, token: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
-    if not access.permission_check(nid, func_name):
-        return HTTPException(403, "Access denied")
-
-    token_validation = access.verify_jwt_token(nid, token)
-    if not token_validation:
-        return HTTPException(status_code=403, detail="Token invalid")
 
     for i in [projectUUID]:
         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
@@ -1148,6 +1218,14 @@ def getAssignment(nid: str, token: str, projectUUID: str):
                 "SQLInjectionCheck": False,
                 "status_code": 400
             }
+
+    if not access.permission_check(nid, func_name):
+        return HTTPException(403, "Access denied")
+
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return HTTPException(status_code=403, detail="Token invalid")
+
     params = {
         "nid": nid,
         "projectUUID": projectUUID
@@ -1161,7 +1239,7 @@ def getAssignment(nid: str, token: str, projectUUID: str):
         }
 
 
-@app.post("/downloadAssignment", status_code=200)
+@app.get("/downloadAssignment/", status_code=200)
 def downloadAssignment(
         nid: str,
         token: str,
@@ -1171,12 +1249,6 @@ def downloadAssignment(
 
     access = AUTHENTICATION()
     func_name = stack()[0][3]
-    if not access.permission_check(nid, func_name):
-        return HTTPException(403, "Access denied")
-
-    token_validation = access.verify_jwt_token(nid, token)
-    if not token_validation:
-        return HTTPException(status_code=403, detail="Token invalid")
 
     for i in [taskUUID, fileID]:
         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
@@ -1184,6 +1256,13 @@ def downloadAssignment(
                 "SQLInjectionCheck": False,
                 "status_code": 400
             }
+
+    if not access.permission_check(nid, func_name):
+        return HTTPException(403, "Access denied")
+
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return HTTPException(status_code=403, detail="Token invalid")
     params = {
         "taskUUID": taskUUID,
         "fileID": fileID
@@ -1245,16 +1324,10 @@ def uploadAssignment(
         }
 
 
-@app.delete("/deleteAssignment/{nid}/{token}/{projectUUID}/{assignmentUUID}", status_code=200)
+@app.delete("/deleteAssignment/", status_code=200)
 def deleteAssignment(nid: str, token: str, assignmentUUID: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
-    if not access.permission_check(nid, func_name):
-        return HTTPException(403, "Access denied")
-
-    token_validation = access.verify_jwt_token(nid, token)
-    if not token_validation:
-        return HTTPException(status_code=403, detail="Token invalid")
 
     for i in [projectUUID]:
         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
@@ -1263,6 +1336,12 @@ def deleteAssignment(nid: str, token: str, assignmentUUID: str, projectUUID: str
                 "status_code": 400
             }
 
+    if not access.permission_check(nid, func_name):
+        return HTTPException(403, "Access denied")
+
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return HTTPException(status_code=403, detail="Token invalid")
     params = {
         "project_id": projectUUID,
         "task_id": assignmentUUID,
@@ -1278,8 +1357,8 @@ def deleteAssignment(nid: str, token: str, assignmentUUID: str, projectUUID: str
         }
 
 
-@app.delete("/deleteAssignmentItem/{nid}/{token}/{taskUUID}/{fileUUID}/{author}", status_code=200)
-def deleteAssignmentItem(nid: str, token: str, taskID: str, fileID: str, author: str):
+@app.delete("/deleteAssignmentItem/", status_code=200)
+def deleteAssignmentItem(nid: str, token: str, taskUUID: str, fileUUID: str, author: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
     if not access.permission_check(nid, func_name):
@@ -1289,7 +1368,7 @@ def deleteAssignmentItem(nid: str, token: str, taskID: str, fileID: str, author:
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
 
-    for i in [taskID, fileID, author]:
+    for i in [taskUUID, fileUUID, author]:
         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
             return {
                 "SQLInjectionCheck": False,
@@ -1297,8 +1376,8 @@ def deleteAssignmentItem(nid: str, token: str, taskID: str, fileID: str, author:
             }
 
     params = {
-        "taskID": taskID,
-        "fileID": fileID,
+        "taskID": taskUUID,
+        "fileID": fileUUID,
         "author": author
     }
 
@@ -1386,16 +1465,10 @@ def newAssignment(
     SQLHandler().newAssignment(params)
 
 
-@app.get("/getAssignmentInfo/{nid}/{token}/{projectUUID}/{assignmentUUID}", status_code=200)
+@app.get("/getAssignmentInfo/", status_code=200)
 def getAssignmentInfo(nid: str, token: str, assignmentUUID: str, projectUUID: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
-    if not access.permission_check(nid, func_name):
-        return HTTPException(403, "Access denied")
-
-    token_validation = access.verify_jwt_token(nid, token)
-    if not token_validation:
-        return HTTPException(status_code=403, detail="Token invalid")
 
     for i in [projectUUID, assignmentUUID]:
         if not AUTHENTICATION().SQLInjectionCheck(prompt=i):
@@ -1403,6 +1476,13 @@ def getAssignmentInfo(nid: str, token: str, assignmentUUID: str, projectUUID: st
                 "SQLInjectionCheck": False,
                 "status_code": 400
             }
+
+    if not access.permission_check(nid, func_name):
+        return HTTPException(403, "Access denied")
+
+    token_validation = access.verify_jwt_token(nid, token)
+    if not token_validation:
+        return HTTPException(status_code=403, detail="Token invalid")
 
     params = {
         "task_id": assignmentUUID,
@@ -1448,17 +1528,19 @@ async def changePassword(nid: str, token: str, oldPassword: str, newPassword: st
         }
 
 
-@app.get("/getIconImages/{nid}/{token}", status_code=200)
-async def getIconImages(nid: str, token: str):
+@app.get("/getIconImages/{nid}", status_code=200)
+async def getIconImages(nid: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if nid == "undefined":
+        return FileResponse(f"./icon/default.png")
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
-    token_validation = access.verify_jwt_token(nid, token)
-    if not token_validation:
-        return HTTPException(status_code=403, detail="Token invalid")
     icon_file_name = SQLHandler().getIconImage(nid)
+
     return FileResponse(f"./icon/{icon_file_name}")
 
 
@@ -1504,10 +1586,17 @@ async def changeIcon(nid: str, token: str, file_: UploadFile, filename: str):
 
 # dashboard
 
-@app.get("/getDeadlineProject/{nid}/{token}", status_code=200)
+@app.get("/getDeadlineProject/", status_code=200)
 def getDeadlineProject(nid: str, token: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not AUTHENTICATION().SQLInjectionCheck(prompt=nid):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 

@@ -75,7 +75,7 @@ class SettingSetupHandler(object):
                     "PASSWORD": os.getenv("PASSWORD") if os.getenv("PASSWORD") else "Abc!@#$%^&*()"
                 },
                 "JWT": {
-                    "JWT_TOKEN_EXPIRE_TIME": 3600,
+                    "JWT_TOKEN_EXPIRE_TIME": os.getenv("JWT_TOKEN_EXPIRE_TIME") if os.getenv("JWT_TOKEN_EXPIRE_TIME") else 3600,
                     "JWT_SECRET": os.getenv("JWT_SECRET") if os.getenv("JWT_SECRET") else "May be this is a secret string",
                     "JWT_ALGORITHM": "HS256"
                 }
