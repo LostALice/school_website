@@ -104,19 +104,30 @@ class SQLSetupHandler(object):
                 user=self.USER,
                 password=self.PASSWORD,
             )
-        except connector.errors.MySQLInterfaceError:
-            raise Exception(
-                "Invalid username or password\n Please edit setting.json")
+        except connector.errors.ProgrammingError:
+            print(Exception, flush=True)
+            raise Exception("Wrong password, please edit docker-compose.yaml file or setting.json")
 
+        self.conn = connector.connect(
+            host=self.HOST,
+            user=self.USER,
+            password=self.PASSWORD,
+        )
         self.curser = self.conn.cursor()
+
         try:
             self.conn.connect(
                 database=self.DATABASE
             )
         except connector.errors.ProgrammingError:
-            self.curser.execute("""CREATE DATABASE %s""",
-                                (self.DATABASE,))
-            self.conn.commit()
+            self.conn = connector.connect(
+                host=self.HOST,
+                user=self.USER,
+                password=self.PASSWORD,
+            )
+            self.curser = self.conn.cursor()
+            sql = f"CREATE DATABASE {self.DATABASE}"
+            self.curser.execute(sql)
             self.conn.connect(
                 database=self.DATABASE
             )

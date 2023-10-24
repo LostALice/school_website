@@ -1,5 +1,7 @@
 # Code by AkinoAlice@Tyrant_Rex
 
+# Docs: https://{api.url.com}/docs/
+
 from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -29,6 +31,7 @@ with open("./setting.json", "r") as f:
 app = FastAPI(debug=DEBUG)
 
 # CORS config
+# i dont care about the cors attack. yes indeed, none of my business
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -39,22 +42,22 @@ app.add_middleware(
 
 
 @app.get("/", status_code=200)
-async def get_test():
+async def get_test(data: str="None",):
     return {
-        "status": "OK",
+        "data": data,
     }
 
 
 @app.post("/", status_code=200)
-async def post_test():
+async def post_test(data: str="None"):
     return {
-        "status": "OK",
+        "data": data,
     }
 
 # login api
 
 
-@app.get("/login/{nid}/{password}", status_code=200)
+@app.get("/login/", status_code=200)
 async def login(nid: str, password: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
@@ -93,7 +96,7 @@ async def getPermissionLevel(nid: str, token: str):
     return PERMISSION(nid).get_levels()
 
 
-@app.get("/JWTValidation/{nid}/{token}", status_code=200)
+@app.get("/JWTValidation/", status_code=200)
 async def JWTValidation(nid: str, token: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
@@ -498,10 +501,17 @@ def getStudentData(nid: str, token: str, projectUUID: str):
         }
 
 
-@app.get("/getStudentList/{nid}/{token}/{projectUUID}", status_code=200)
+@app.get("/getStudentList/", status_code=200)
 def getStudentList(nid: str, token: str, projectUUID):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
+
+    if not access.SQLInjectionCheck(prompt=projectUUID):
+        return {
+            "SQLInjectionCheck": False,
+            "status_code": 400
+        }
+
     if not access.permission_check(nid, func_name):
         return HTTPException(403, "Access denied")
 
@@ -509,11 +519,6 @@ def getStudentList(nid: str, token: str, projectUUID):
     if not token_validation:
         return HTTPException(status_code=403, detail="Token invalid")
 
-    if not AUTHENTICATION().SQLInjectionCheck(prompt=projectUUID):
-        return {
-            "SQLInjectionCheck": False,
-            "status_code": 400
-        }
 
     studentList = SQLHandler().getStudentList()
     data = []
@@ -1533,7 +1538,7 @@ async def getIconImages(nid: str):
     access = AUTHENTICATION()
     func_name = stack()[0][3]
 
-    if nid == "undefined":
+    if nid == "undefined" or nid == "null":
         return FileResponse(f"./icon/default.png")
 
     if not access.permission_check(nid, func_name):

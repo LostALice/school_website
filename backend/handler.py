@@ -45,6 +45,12 @@ class SQLHandler:
             print(e, flush=True)
             SQLSetupHandler()
 
+        self.conn = connector.connect(
+            database=self.DATABASE,
+            host=self.HOST,
+            user=self.USER,
+            password=self.PASSWORD,
+        )
         self.cursor = self.conn.cursor()
 
     # close the connection after query executed
