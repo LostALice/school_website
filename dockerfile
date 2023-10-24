@@ -10,4 +10,4 @@ RUN pip install -r req.txt
 
 WORKDIR /backend/backend
 
-ENTRYPOINT ["uvicorn", "main:app", "--port", "8080"]
+ENTRYPOINT ["uvicorn", "--host", "0.0.0.0", "main:app", "--port", "8080"]
