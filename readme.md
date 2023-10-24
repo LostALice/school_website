@@ -4,7 +4,7 @@
 
 # Docker env
 
-### The following environment variables edit the default setting of [setting.json](#setting.json) file
+### The following environment variables edit the default setting of [setting.json](#settingjson) file
 
 | Environment variables | Default setting                | Description                                              |
 | --------------------- | ------------------------------ | -------------------------------------------------------- |
